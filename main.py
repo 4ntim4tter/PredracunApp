@@ -45,22 +45,31 @@ def query_window(master_window, customer_data, name_auto_complete, reg_broj_comp
         
     #Ime i prezime label and combobox
     ttk.Label(frame, font=("Arial", 14, "bold"), text="Ime i Prezime").grid(column=0, row=0)
-    name_combo = autocomplete.AutocompleteCombobox(frame, width=30, completevalues=name_auto_complete, font=("Arial", 16))
+    name_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=name_auto_complete, font=("Arial", 16))
     name_combo.grid(row=0, column=1)
     name_combo.bind("<Return>", get_name)
     
     #Vozilo label and combobox
     ttk.Label(frame, font=("Arial", 14, "bold"), text="Vozilo").grid(column=0, row=1)
-    car_combo = autocomplete.AutocompleteCombobox(frame, width=30, font=("Arial", 16))
+    car_combo = autocomplete.AutocompleteCombobox(frame, width=20, font=("Arial", 16))
     car_combo.grid(row=1, column=1)
     car_combo.bind("<Return>", get_vehicle)
     
     #Registracija label and combobox
     ttk.Label(frame, font=("Arial", 14, "bold"), text="Reg. Broj").grid(column=0, row=2)
-    reg_combo = autocomplete.AutocompleteCombobox(frame, width=30, completevalues=reg_broj_complete, font=("Arial", 16))
+    reg_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=reg_broj_complete, font=("Arial", 16))
     reg_combo.grid(row=2, column=1)
     reg_combo.bind("<Return>", get_reg_broj)
-
+    
+    #Repair list, listbox
+    repair_list = tk.Listbox(frame, width=29, height=10, font=("Arial", 12))
+    repair_list.grid(column=1, row=3)
+    repair_list.configure(yscrollcommand=repair_list.yview)
+    
+    for char in range(9):
+        repair_list.insert(char, "test")
+    
+    
 def main():
     
     #store data from csv in memory for use
@@ -93,8 +102,13 @@ def main():
     button_style = ttk.Style()
     button_style.configure("button_style.TButton", font=("Arial", 14, "bold"), background="Gray")
     
-    query_button = ttk.Button(master_window, text="Pretraga Mušterije", style="button_style.TButton", command=lambda : query_window(master_window, customer_data, name_auto_complete, reg_broj_complete))
-    query_button.grid(row=1, column=1)
+    #search for customers button
+    query_customer_button = ttk.Button(master_window, width=20,text="Pretraga Mušterije", style="button_style.TButton", command=lambda : query_window(master_window, customer_data, name_auto_complete, reg_broj_complete))
+    query_customer_button.grid(row=0, column=0)
+    
+    #add new customer button
+    add_customer_button = ttk.Button(master_window, width=20, text="Dodaj Mušteriju", style="button_style.TButton")
+    add_customer_button.grid(row=1, column=0)
     
     master_window.mainloop()
 
