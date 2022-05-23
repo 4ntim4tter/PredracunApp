@@ -21,9 +21,7 @@ def create_new_customer(name, car, reg_broj):
     #     for customer_data in reader:
     #         print(customer_data["ime"], customer_data["vozilo"], customer_data["reg_broj"])
 
-def query_window(master_window, customer_data, name_auto_complete, reg_broj_complete):
-    
-    customer_data = customer_data     
+def find_customer_window(master_window, customer_data, name_auto_complete, reg_broj_complete):  
 
     def get_name(event):
         if name_combo.focus_get():
@@ -31,13 +29,11 @@ def query_window(master_window, customer_data, name_auto_complete, reg_broj_comp
             car_combo.set(customer["vozilo"])
             reg_combo.set(customer["reg_broj"])
             
-    def get_vehicle(event):
-        if car_combo.focus_get():
-            print(car_combo.get())
-            
     def get_reg_broj(event):
-        if car_combo.focus_get():
-            print(car_combo.get())
+        if reg_combo.focus_get():
+            customer = next(item for item in customer_data if item["reg_broj"] == reg_combo.get())
+            name_combo.set(customer["ime"])
+            car_combo.set(customer["vozilo"])
     
     frame = tk.Toplevel(master_window)
     frame.title("Pretraga Mušterije")
@@ -46,29 +42,41 @@ def query_window(master_window, customer_data, name_auto_complete, reg_broj_comp
     #Ime i prezime label and combobox
     ttk.Label(frame, font=("Arial", 14, "bold"), text="Ime i Prezime").grid(column=0, row=0)
     name_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=name_auto_complete, font=("Arial", 16))
-    name_combo.grid(row=0, column=1)
+    name_combo.grid(row=1, column=0)
     name_combo.bind("<Return>", get_name)
     
     #Vozilo label and combobox
-    ttk.Label(frame, font=("Arial", 14, "bold"), text="Vozilo").grid(column=0, row=1)
+    ttk.Label(frame, font=("Arial", 14, "bold"), text="Vozilo").grid(column=0, row=2)
     car_combo = autocomplete.AutocompleteCombobox(frame, width=20, font=("Arial", 16))
-    car_combo.grid(row=1, column=1)
-    car_combo.bind("<Return>", get_vehicle)
+    car_combo.grid(row=3, column=0)
     
     #Registracija label and combobox
-    ttk.Label(frame, font=("Arial", 14, "bold"), text="Reg. Broj").grid(column=0, row=2)
+    ttk.Label(frame, font=("Arial", 14, "bold"), text="Reg. Broj").grid(column=0, row=4)
     reg_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=reg_broj_complete, font=("Arial", 16))
-    reg_combo.grid(row=2, column=1)
+    reg_combo.grid(row=5, column=0)
     reg_combo.bind("<Return>", get_reg_broj)
     
-    #Repair list, listbox
-    repair_list = tk.Listbox(frame, width=29, height=10, font=("Arial", 12))
-    repair_list.grid(column=1, row=3)
-    repair_list.configure(yscrollcommand=repair_list.yview)
+    #Repair list, listbox, scrollbar
+    listbox_frame = tk.Frame(frame)
+    listbox_frame.grid(row=6, column=0)
     
-    for char in range(9):
-        repair_list.insert(char, "test")
+    repair_listbox = tk.Listbox(listbox_frame, width=29, height=10, font=("Arial", 12))
+    repair_listbox.pack(side='left', fill='y', expand=True)
     
+    scrollbar = tk.Scrollbar(listbox_frame, orient='vertical', command=repair_listbox.yview)
+    scrollbar.pack(side='right', fill='y')
+    
+    repair_listbox.config(yscrollcommand=scrollbar.set)
+    
+    for char in range(25):
+        repair_listbox.insert(char, "test" + str(char))
+
+
+def add_customer_window(master_window, customer_data):
+    
+    frame = tk.Toplevel(master_window)
+    frame.title("Nova Mušterija")
+    frame.grid()
     
 def main():
     
@@ -103,11 +111,11 @@ def main():
     button_style.configure("button_style.TButton", font=("Arial", 14, "bold"), background="Gray")
     
     #search for customers button
-    query_customer_button = ttk.Button(master_window, width=20,text="Pretraga Mušterije", style="button_style.TButton", command=lambda : query_window(master_window, customer_data, name_auto_complete, reg_broj_complete))
+    query_customer_button = ttk.Button(master_window, width=20,text="Pretraga Mušterije", style="button_style.TButton", command=lambda:find_customer_window(master_window, customer_data, name_auto_complete, reg_broj_complete))
     query_customer_button.grid(row=0, column=0)
     
     #add new customer button
-    add_customer_button = ttk.Button(master_window, width=20, text="Dodaj Mušteriju", style="button_style.TButton")
+    add_customer_button = ttk.Button(master_window, width=20, text="Dodaj Mušteriju", style="button_style.TButton", command=lambda:add_customer_window(master_window, customer_data))
     add_customer_button.grid(row=1, column=0)
     
     master_window.mainloop()
