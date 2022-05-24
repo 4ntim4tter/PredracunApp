@@ -15,11 +15,6 @@ def create_new_customer(name, car, reg_broj):
     with open("data.csv", "a", newline='', encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow([name, car, reg_broj])
-        
-    # with open("data.csv", "r", encoding="utf-8") as file:
-    #     reader = csv.DictReader(file)
-    #     for customer_data in reader:
-    #         print(customer_data["ime"], customer_data["vozilo"], customer_data["reg_broj"])
 
 def find_customer_window(master_window, customer_data, name_auto_complete, reg_broj_complete):  
 
@@ -37,31 +32,31 @@ def find_customer_window(master_window, customer_data, name_auto_complete, reg_b
     
     frame = tk.Toplevel(master_window)
     frame.title("Pretraga Mušterije")
-    frame.grid()
+    frame.pack_propagate()
         
     #Ime i prezime label and combobox
-    ttk.Label(frame, font=("Arial", 14, "bold"), text="Ime i Prezime").grid(column=0, row=0)
+    ttk.Label(frame, font=("Arial", 14, "bold"), text="Ime i Prezime").pack(side='top')
     name_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=name_auto_complete, font=("Arial", 16))
-    name_combo.grid(row=1, column=0)
+    name_combo.pack(side='top')
     name_combo.bind("<Return>", get_name)
     
     #Vozilo label and combobox
-    ttk.Label(frame, font=("Arial", 14, "bold"), text="Vozilo").grid(column=0, row=2)
+    ttk.Label(frame, font=("Arial", 14, "bold"), text="Vozilo").pack(side='top')
     car_combo = autocomplete.AutocompleteCombobox(frame, width=20, font=("Arial", 16))
-    car_combo.grid(row=3, column=0)
+    car_combo.pack(side='top')
     
     #Registracija label and combobox
-    ttk.Label(frame, font=("Arial", 14, "bold"), text="Reg. Broj").grid(column=0, row=4)
+    ttk.Label(frame, font=("Arial", 14, "bold"), text="Reg. Broj").pack(side='top')
     reg_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=reg_broj_complete, font=("Arial", 16))
-    reg_combo.grid(row=5, column=0)
+    reg_combo.pack(side='top')
     reg_combo.bind("<Return>", get_reg_broj)
     
     #Repair list, listbox, scrollbar
     listbox_frame = tk.Frame(frame)
-    listbox_frame.grid(row=6, column=0)
+    listbox_frame.pack(side='top', expand=True, fill='both')
     
     repair_listbox = tk.Listbox(listbox_frame, width=29, height=10, font=("Arial", 12))
-    repair_listbox.pack(side='left', fill='y', expand=True)
+    repair_listbox.pack(side='left', fill='both', expand=True)
     
     scrollbar = tk.Scrollbar(listbox_frame, orient='vertical', command=repair_listbox.yview)
     scrollbar.pack(side='right', fill='y')
