@@ -11,6 +11,7 @@ NAME_AUTO_COMPLETE = []
 REG_BROJ_COMPLETE = []
 CUSTOMER_DATA = []
 
+#check if data file exists, create new file if not
 if os.path.isfile("data.csv"):
     pass
 else:
@@ -119,7 +120,7 @@ def add_customer_window(master_window):
 
 
 def main():
-    #store data from csv in memory for use
+    #store data from csv in cache for use
     with open("data.csv", "r", encoding="utf-8") as file:
         reader = csv.DictReader(file)
         for row in reader:
