@@ -92,8 +92,8 @@ def add_customer_window(master_window):
         CUSTOMER_DATA.append({'ime':name_add_text.get().capitalize(), 
                               'vozilo':car_add_text.get().capitalize(), 
                               'reg_broj':reg_add_text.get().upper()})
-        NAME_AUTO_COMPLETE.append(name_add_text.get())
-        REG_BROJ_COMPLETE.append(reg_add_text.get())
+        NAME_AUTO_COMPLETE.append(name_add_text.get().capitalize())
+        REG_BROJ_COMPLETE.append(reg_add_text.get().upper())
     
     frame = tk.Toplevel(master_window)
     frame.title("Nova Mušterija")
