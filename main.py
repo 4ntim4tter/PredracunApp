@@ -69,14 +69,19 @@ def find_customer_window(master_window, customer_data, name_auto_complete, reg_b
         repair_listbox.insert(char, "test" + str(char))
 
 #ADD CUSTOMER AND CREATE WORK DATA FILE
-def add_customer_window(master_window, customer_data):
+def add_customer_window(master_window, duplicate_check_data):
     
     def add_to_csv():
-        if name_add_text.get() != '' and car_add_text.get() != '' and reg_add_text.get() != '':
-            create_new_customer(name_add_text.get(),car_add_text.get(), reg_add_text.get())
-            messagebox.showinfo("Uspjeh", "Nova mušterija dodana.")
-        else:
+        if name_add_text.get() == '' or car_add_text.get() == '' or reg_add_text.get() == '':
             messagebox.showwarning("Upozorenje!", "Jedno ili više polja je prazno!")
+            return None
+        
+        if f"{name_add_text.get()},{car_add_text.get()},{reg_add_text.get()}" in duplicate_check_data:
+            messagebox.showwarning("Upozorenje!", "Korisnik i Registracija već postoje u bazi podataka.")
+            return None
+
+        create_new_customer(name_add_text.get(),car_add_text.get(), reg_add_text.get())
+        messagebox.showinfo("Uspjeh", "Nova mušterija dodana.")
     
     frame = tk.Toplevel(master_window)
     frame.attributes('-topmost', 'true')
@@ -106,6 +111,7 @@ def main():
     
     #store data from csv in memory for use
     customer_data = []
+          
     with open("data.csv", "r", encoding="utf-8") as file:
         reader = csv.DictReader(file)
         for row in reader:
@@ -126,6 +132,11 @@ def main():
             else:
                 reg_broj_complete.append(data["reg_broj"])
     
+    #data for checking duplicates
+    duplicate_check_data = []
+    for data in customer_data:
+        duplicate_check_data.append("{},{},{}".format(data['ime'],data['vozilo'],data['reg_broj']))
+    
     #main window
     master_window = tk.Tk()
     master_window.title("Predračun")
@@ -139,7 +150,7 @@ def main():
     query_customer_button.grid(row=0, column=0)
     
     #add new customer button
-    add_customer_button = ttk.Button(master_window, width=20, text="Dodaj Mušteriju", style="bttn_style.TButton", command=lambda:add_customer_window(master_window, customer_data))
+    add_customer_button = ttk.Button(master_window, width=20, text="Dodaj Mušteriju", style="bttn_style.TButton", command=lambda:add_customer_window(master_window, duplicate_check_data))
     add_customer_button.grid(row=1, column=0)
     
     master_window.mainloop()
