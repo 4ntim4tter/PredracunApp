@@ -13,9 +13,9 @@ REG_BROJ_COMPLETE = []
 CUSTOMER_DATA = []
 
 #check if data file exists, create new file if not
-jobs_storage_path = os.path.join(os.path.dirname(__file__) + "/jobs/")
-if not os.path.isdir(jobs_storage_path):
-    os.mkdir(jobs_storage_path)
+JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + "/jobs/")
+if not os.path.isdir(JOBS_STORAGE_PATH):
+    os.mkdir(JOBS_STORAGE_PATH)
 
 
 if os.path.isfile("data.csv"):
@@ -40,6 +40,14 @@ def find_customer_window(master_window, CUSTOMER_DATA, NAME_AUTO_COMPLETE, REG_B
             customer = next(item for item in CUSTOMER_DATA if item["ime"] == name_combo.get().title())
             car_combo.set(customer["vozilo"])
             reg_combo.set(customer["reg_broj"])
+            
+            csv_path = name_combo.get().lower().replace(" ", "") + "_" + reg_combo.get()
+            
+            with open(f"{JOBS_STORAGE_PATH}/{csv_path}.csv", 'r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    repair_listbox.insert('end', row)
+                
             
     def get_reg_broj(event):
         if reg_combo.focus_get():
@@ -74,6 +82,7 @@ def find_customer_window(master_window, CUSTOMER_DATA, NAME_AUTO_COMPLETE, REG_B
     
     repair_listbox = tk.Listbox(listbox_frame, width=29, height=10, font=font_style)
     repair_listbox.pack(side='left', fill='both', expand=True)
+    repair_listbox.insert('end', )
     
     scrollbar = tk.Scrollbar(listbox_frame, orient='vertical', command=repair_listbox.yview)
     scrollbar.pack(side='right', fill='y')
@@ -105,10 +114,10 @@ def add_customer_window(master_window, font_style):
         
         name_reg_nospace = name_add_text.get().lower().replace(" ", "") + "_" + reg_add_text.get().upper().replace(" ", "")
         
-        if not os.path.isfile(f"{jobs_storage_path}/{name_reg_nospace}.csv"):
-            with open(f"{jobs_storage_path}/{name_reg_nospace}.csv", "a", newline='', encoding="utf-8") as file:
+        if not os.path.isfile(f"{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv"):
+            with open(f"{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv", "a", newline='', encoding="utf-8") as file:
                 writer = csv.writer(file)
-                writer.writerow(["dio", "vrsta", "količina", "cijena"])
+                writer.writerow(["dio", "marka", "količina", "cijena"])
         
         frame.focus_set()   
     
