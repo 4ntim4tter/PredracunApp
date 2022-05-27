@@ -63,9 +63,9 @@ def find_customer_window(master_window, CUSTOMER_DATA, NAME_AUTO_COMPLETE, REG_B
                     tree_completed_jobs.insert('', tk.END, values=tuple(row.values()))
                     
     
-    frame = tk.Toplevel(master_window)
-    frame.title('Pretraga Mušterije')
-    frame.pack_propagate()
+    frame = tk.Frame(master_window)
+    #frame.title('Pretraga Mušterije')
+    frame.grid()
      
     #Ime i prezime label and combobox
     ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
@@ -142,13 +142,10 @@ def add_customer_window(master_window, font_style):
             with open(f'{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv', 'a', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
                 writer.writerow(['dio', 'marka', 'količina', 'cijena'])
-        
-        frame.focus_set()   
+         
     
-    frame = tk.Toplevel(master_window)
-    frame.title('Nova Mušterija')
-    frame.focus_set()
-    frame.pack_propagate()
+    frame = tk.Frame(master_window)
+    frame.grid()
     
     #Add new customer name
     ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
@@ -193,6 +190,14 @@ def main():
     for data in CUSTOMER_DATA:
         DUPLICATE_CHECK_DATA.append('{},{},{}'.format(data['ime'].lower(),data['vozilo'].lower(),data['reg_broj'].lower()))
     
+    
+    def clear_children():
+        list_of_slaves = master_window.grid_slaves()
+        for frame in list_of_slaves:
+            if '!frame' in str(frame):
+                frame.destroy()
+    
+    
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
@@ -207,12 +212,12 @@ def main():
     
     #search for customers button
     query_customer_button = ttk.Button(master_window, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
-                                       command=lambda:find_customer_window(master_window, CUSTOMER_DATA, NAME_AUTO_COMPLETE, REG_BROJ_COMPLETE, font_style))
+                                       command=lambda:[clear_children(), find_customer_window(master_window, CUSTOMER_DATA, NAME_AUTO_COMPLETE, REG_BROJ_COMPLETE, font_style)])
     query_customer_button.grid(row=0, column=0)
     
     #add new customer button
     add_customer_button = ttk.Button(master_window, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
-                                     command=lambda:add_customer_window(master_window, font_style))
+                                     command=lambda:[clear_children(), add_customer_window(master_window, font_style)])
     add_customer_button.grid(row=1, column=0)
     
     master_window.mainloop()
