@@ -1,10 +1,10 @@
 import csv
 import os
 import tkinter as tk
-from ttkwidgets import autocomplete
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
+from PIL import Image, ImageTk
 import tkinter.font as tkFont
+from ttkwidgets import autocomplete
 
 #data class for parsing files to cache
 class DataVariables(object):
@@ -36,7 +36,7 @@ class DataVariables(object):
         #data for checking duplicates
         for data in self.customer_data:
             self.duplicate_data_check.append('{},{},{}'.format(data['ime'].lower(),data['vozilo'].lower(),data['reg_broj'].lower()))
-        
+       
 
 #check if data directory exists, create new if not
 JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '/jobs/')
@@ -87,12 +87,13 @@ def find_customer_window(master_window, database, font_style):
                     tree_completed_jobs.insert('', tk.END, values=tuple(row.values()))
                     
     
-    frame = tk.Frame(master_window)
-    frame.pack(side='top', padx=5, pady=5, fill='both')
+    frame = tk.Frame(master_window, border=5)
+    frame.pack(side='top', fill='both', expand=True)
      
     #Ime i prezime label and combobox
     ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
     name_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=database.name_auto_complete, font=font_style)
+    name_combo.focus_set()
     name_combo.pack(side='top')
     name_combo.bind('<Return>', get_name)
     
@@ -109,7 +110,7 @@ def find_customer_window(master_window, database, font_style):
     
     #Repair list, treeview, scrollbar
     treeview_frame = tk.Frame(frame)
-    treeview_frame.pack(side='top', expand=True, fill='both')
+    treeview_frame.pack(side='top', fill='both', expand=True)
     
     tree_completed_jobs_columns = ('dio', 'marka', 'količina', 'ukupno')
     
@@ -123,16 +124,18 @@ def find_customer_window(master_window, database, font_style):
     tree_completed_jobs.heading('marka', text='Marka')
     
     tree_completed_jobs.heading('količina', text='Količina')
-    tree_completed_jobs.column('količina', anchor='e')
+    tree_completed_jobs.column('količina', anchor='e', width=75)
     
     tree_completed_jobs.heading('ukupno', text='Ukupno')
-    tree_completed_jobs.column('ukupno', anchor='e')
+    tree_completed_jobs.column('ukupno', anchor='e', width=75)
     tree_completed_jobs.pack(side='left', fill='both', expand=True)
+
     
     scrollbar = tk.Scrollbar(treeview_frame, orient='vertical', command=tree_completed_jobs.yview)
     scrollbar.pack(side='right', fill='y')
     
     tree_completed_jobs.config(yscrollcommand=scrollbar.set)
+
     
     #Add new job button
 
@@ -168,25 +171,31 @@ def add_customer_window(master_window, database, font_style):
          
     
     frame = tk.Frame(master_window)
-    frame.pack(side='top', padx=5, pady=5, fill='both')
+    frame.config(width=640, height=480)
+    frame.pack(side='top', fill='both', expand=True, padx=1, pady=1)
+    
     
     #Add new customer name
     ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
-    name_add_text = tk.Entry(frame, width=20, font=font_style)
-    name_add_text.pack(side='top')
+    name_add_text = tk.Entry(frame, width=30, font=font_style)
+    name_add_text.focus_set()
+    name_add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    name_add_text.pack(side='top', pady=(5,0))
     
     #Add new car name
     ttk.Label(frame, font=font_style, text='Vozilo').pack(side='top')
-    car_add_text = tk.Entry(frame, width=20, font=font_style)
-    car_add_text.pack(side='top')
+    car_add_text = tk.Entry(frame, width=30, font=font_style)
+    car_add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    car_add_text.pack(side='top', pady=(5,0))
     
     #Add new reg number name
     ttk.Label(frame, font=font_style, text='Registracija').pack(side='top')
-    reg_add_text = tk.Entry(frame, width=20, font=font_style)
-    reg_add_text.pack(side='top')
+    reg_add_text = tk.Entry(frame, width=30, font=font_style)
+    reg_add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    reg_add_text.pack(side='top', pady=(5,0))
     
     confirm_button = ttk.Button(frame, text='Unos u Bazu', style='bttn_style.TButton', command=add_to_csv)
-    confirm_button.pack(side='top')
+    confirm_button.pack(side='top', pady=(5, 0))
 
 
 def main():
@@ -204,8 +213,25 @@ def main():
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
+    master_window.geometry('640x480')
     master_window.config(background='Gray')
     
+    
+    #create tiled background image from selected photo
+    background_image = Image.open('background.jpg')
+    bg_w, bg_h = background_image.size
+    new_image = Image.new('RGB', (2000, 2000))
+    w, h = new_image.size
+
+    for i in range(0, w, bg_w):
+        for j in range(0, h, bg_h):
+            new_image.paste(background_image,(i,j))
+
+    new_image.save('new_background_image.jpg')
+    new_background_image = ImageTk.PhotoImage(Image.open('new_background_image.jpg'))
+    bg_label = tk.Label(master_window, image=new_background_image)
+    bg_label.place(anchor='nw')
+        
     #usable font style passed to functions
     font_style = tkFont.Font(family='Times New Roman', size=14, weight='bold')
     
@@ -216,12 +242,15 @@ def main():
     #search for customers button
     query_customer_button = ttk.Button(master_window, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
                                        command=lambda:[clear_children(), find_customer_window(master_window, database, font_style)])
-    query_customer_button.pack(side='top', anchor="nw", fill='x', padx=2, pady=(0, 5))
+    query_customer_button.pack(side='top', anchor="center", padx=2, pady=(2, 5))
+
     
     #add new customer button
     add_customer_button = ttk.Button(master_window, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
                                      command=lambda:[clear_children(), add_customer_window(master_window, database, font_style)])
-    add_customer_button.pack(side='top', anchor="nw", fill='x', padx=2, pady=(0, 0))
+    add_customer_button.pack(side='top', anchor="center", padx=2, pady=(0, 0))
+
+    
     
     master_window.mainloop()
 
