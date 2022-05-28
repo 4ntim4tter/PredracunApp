@@ -36,9 +36,26 @@ class DataVariables(object):
         #data for checking duplicates
         for data in self.customer_data:
             self.duplicate_data_check.append('{},{},{}'.format(data['ime'].lower(),data['vozilo'].lower(),data['reg_broj'].lower()))
-       
 
-#check if data directory exists, create new if not
+#base class for customer entry widgets
+class EntryTemplate(object):
+    def __init__(self, label_name, frame, font_style):
+        self.label_name = label_name
+        self.frame = frame
+        self.font_style = font_style
+        
+        ttk.Label(self.frame, font=self.font_style, text=self.label_name).pack(side='top')
+        self.add_text = tk.Entry(self.frame, width=30, font=self.font_style)
+        self.add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
+        self.add_text.pack(side='top', pady=(5,0))
+        
+    def set_focus(self):
+        self.add_text.focus_set()
+        
+    def get_text(self):
+        return self.add_text.get()       
+
+#check if /jobs/ data directory exists, create new if not
 JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '/jobs/')
 if not os.path.isdir(JOBS_STORAGE_PATH):
     os.mkdir(JOBS_STORAGE_PATH)
@@ -60,7 +77,7 @@ def create_new_customer(name:str, car:str, reg_broj:str):
 def find_customer_window(master_window, database, font_style):
       
     def get_name(event):
-        if name_combo.focus_get():
+        if name_combo.focus_get() and name_combo.get() != '':
             customer = next(item for item in database.customer_data if item['ime'] == name_combo.get().title())
             car_combo.set(customer['vozilo'])
             reg_combo.set(customer['reg_broj'])
@@ -74,7 +91,7 @@ def find_customer_window(master_window, database, font_style):
                 
             
     def get_reg_broj(event):
-        if reg_combo.focus_get():
+        if reg_combo.focus_get() and reg_combo.get() != '':
             customer = next(item for item in database.customer_data if item['reg_broj'] == reg_combo.get().upper())
             name_combo.set(customer['ime'])
             car_combo.set(customer['vozilo'])
@@ -89,13 +106,13 @@ def find_customer_window(master_window, database, font_style):
     
     frame = tk.Frame(master_window, border=5)
     frame.pack(side='top', fill='both', expand=True)
+    master_window.bind('<Return>', get_name)
      
     #Ime i prezime label and combobox
     ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
     name_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=database.name_auto_complete, font=font_style)
     name_combo.focus_set()
     name_combo.pack(side='top')
-    name_combo.bind('<Return>', get_name)
     
     #Vozilo label and combobox
     ttk.Label(frame, font=font_style, text='Vozilo').pack(side='top')
@@ -144,26 +161,26 @@ def find_customer_window(master_window, database, font_style):
 def add_customer_window(master_window, database, font_style):
     
     def add_to_csv():
-        if name_add_text.get() == '' or car_add_text.get() == '' or reg_add_text.get() == '':
+        if name_entry.get_text() == '' or car_entry.get_text() == '' or reg_entry.get_text() == '':
             messagebox.showwarning('Upozorenje!', 'Jedno ili više polja je prazno!')
             return None
         
-        if f'{name_add_text.get().lower()},{car_add_text.get().lower()},{reg_add_text.get().lower()}' in database.duplicate_data_check:
+        if f'{name_entry.get_text().lower()},{car_entry.get_text().lower()},{reg_entry.get_text().lower()}' in database.duplicate_data_check:
             messagebox.showwarning('Upozorenje!', 'Korisnik i Registracija već postoje u bazi podataka.')
             return None
 
         #update cache variables and data for new user real time
-        create_new_customer(name_add_text.get(),car_add_text.get(), reg_add_text.get())
-        database.duplicate_data_check.append(f'{name_add_text.get().lower()},{car_add_text.get().lower()},{reg_add_text.get().lower()}')
-        database.customer_data.append({'ime':name_add_text.get().title(), 
-                              'vozilo':car_add_text.get().title(), 
-                              'reg_broj':reg_add_text.get().upper()})
-        database.name_auto_complete.append(name_add_text.get().title())
-        database.reg_auto_complete.append(reg_add_text.get().upper())
+        create_new_customer(name_entry.get_text(),car_entry.get_text(), reg_entry.get_text())
+        database.duplicate_data_check.append(f'{name_entry.get_text().lower()},{car_entry.get_text().lower()},{reg_entry.get_text().lower()}')
+        database.customer_data.append({'ime':name_entry.get_text().title(), 
+                              'vozilo':car_entry.get_text().title(), 
+                              'reg_broj':reg_entry.get_text().upper()})
+        database.name_auto_complete.append(name_entry.get_text().title())
+        database.reg_auto_complete.append(reg_entry.get_text().upper())
         messagebox.showinfo('Uspjeh', 'Nova mušterija dodana u bazu podataka.')
         
-        name_reg_nospace = name_add_text.get().lower().replace(' ', '') + '_' + reg_add_text.get().upper().replace(' ', '')
-        
+        #create work.csv file if one does not exist
+        name_reg_nospace = name_entry.get_text().lower().replace(' ', '') + '_' + reg_entry.get_text().upper().replace(' ', '')
         if not os.path.isfile(f'{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv'):
             with open(f'{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv', 'a', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
@@ -173,26 +190,13 @@ def add_customer_window(master_window, database, font_style):
     frame = tk.Frame(master_window)
     frame.config(width=640, height=480)
     frame.pack(side='top', fill='both', expand=True, padx=1, pady=1)
+    master_window.bind('<Return>', lambda event:add_to_csv())
     
-    
-    #Add new customer name
-    ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
-    name_add_text = tk.Entry(frame, width=30, font=font_style)
-    name_add_text.focus_set()
-    name_add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    name_add_text.pack(side='top', pady=(5,0))
-    
-    #Add new car name
-    ttk.Label(frame, font=font_style, text='Vozilo').pack(side='top')
-    car_add_text = tk.Entry(frame, width=30, font=font_style)
-    car_add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    car_add_text.pack(side='top', pady=(5,0))
-    
-    #Add new reg number name
-    ttk.Label(frame, font=font_style, text='Registracija').pack(side='top')
-    reg_add_text = tk.Entry(frame, width=30, font=font_style)
-    reg_add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    reg_add_text.pack(side='top', pady=(5,0))
+    #Add new user to database
+    name_entry = EntryTemplate('Ime i Prezime', frame, font_style)
+    name_entry.set_focus()
+    car_entry = EntryTemplate('Vozilo', frame, font_style)
+    reg_entry = EntryTemplate('Registracija', frame, font_style)
     
     confirm_button = ttk.Button(frame, text='Unos u Bazu', style='bttn_style.TButton', command=add_to_csv)
     confirm_button.pack(side='top', pady=(5, 0))
