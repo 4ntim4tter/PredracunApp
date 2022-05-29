@@ -55,6 +55,31 @@ class EntryTemplate(object):
     def get_text(self):
         return self.add_text.get()       
 
+class AutocompleteTemplate(object):
+    def __init__(self, label_name, frame, font_style, database) -> None:
+        self.label_name = label_name
+        self.frame = frame
+        self.font_style = font_style
+        self.database = database
+        
+        ttk.Label(self.frame, font=self.font_style, text=self.label_name).pack(side='top')
+        self.autocomplete = autocomplete.AutocompleteCombobox(self.frame, width=20, completevalues=self.database, font=self.font_style)
+        #self.autocomplete.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
+        self.autocomplete.pack(side='top', pady=(5,0))
+        
+    def take_focus(self):
+        self.autocomplete.focus_set()
+        
+    def is_focused(self):
+        return self.autocomplete.focus_get()
+        
+    def get_text(self):
+        return self.autocomplete.get()
+    
+    def set_text(self, text):
+        return self.autocomplete.set(text)
+    
+    
 #check if /jobs/ data directory exists, create new if not
 JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '/jobs/')
 if not os.path.isdir(JOBS_STORAGE_PATH):
@@ -77,12 +102,12 @@ def create_new_customer(name:str, car:str, reg_broj:str):
 def find_customer_window(master_window, database, font_style):
       
     def get_name(event):
-        if name_combo.focus_get() and name_combo.get() != '':
-            customer = next(item for item in database.customer_data if item['ime'] == name_combo.get().title())
-            car_combo.set(customer['vozilo'])
-            reg_combo.set(customer['reg_broj'])
+        if name_autocomplete.is_focused() and name_autocomplete.get_text() != '':
+            customer = next(item for item in database.customer_data if item['ime'] == name_autocomplete.get_text().title())
+            car_autocomplete.set_text(customer['vozilo'])
+            reg_autocomplete.set_text(customer['reg_broj'])
             
-            csv_path = name_combo.get().lower().replace(' ', '') + '_' + reg_combo.get()
+            csv_path = name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text()
             
             with open(f'{JOBS_STORAGE_PATH}/{csv_path}.csv', 'r', encoding='utf-8') as file:
                 reader = csv.DictReader(file)
@@ -91,12 +116,12 @@ def find_customer_window(master_window, database, font_style):
                 
             
     def get_reg_broj(event):
-        if reg_combo.focus_get() and reg_combo.get() != '':
-            customer = next(item for item in database.customer_data if item['reg_broj'] == reg_combo.get().upper())
-            name_combo.set(customer['ime'])
-            car_combo.set(customer['vozilo'])
+        if reg_autocomplete.is_focused() and reg_autocomplete.get_text() != '':
+            customer = next(item for item in database.customer_data if item['reg_broj'] == reg_autocomplete.get_text().upper())
+            name_autocomplete.set_text(customer['ime'])
+            car_autocomplete.set_text(customer['vozilo'])
             
-            csv_path = name_combo.get().lower().replace(' ', '') + '_' + reg_combo.get()
+            csv_path = name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text()
             
             with open(f'{JOBS_STORAGE_PATH}/{csv_path}.csv', 'r', encoding='utf-8') as file:
                 reader = csv.DictReader(file)
@@ -108,22 +133,26 @@ def find_customer_window(master_window, database, font_style):
     frame.pack(side='top', fill='both', expand=True)
     master_window.bind('<Return>', get_name)
      
+    name_autocomplete = AutocompleteTemplate('Ime i Prezime', frame, font_style, database.name_auto_complete)
+    car_autocomplete = AutocompleteTemplate('Vozilo', frame, font_style, None)
+    reg_autocomplete= AutocompleteTemplate('Registracija', frame, font_style, database.reg_auto_complete)
+    
     #Ime i prezime label and combobox
-    ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
-    name_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=database.name_auto_complete, font=font_style)
-    name_combo.focus_set()
-    name_combo.pack(side='top')
+    # ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
+    # name_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=database.name_auto_complete, font=font_style)
+    # name_combo.focus_set()
+    # name_combo.pack(side='top')
     
-    #Vozilo label and combobox
-    ttk.Label(frame, font=font_style, text='Vozilo').pack(side='top')
-    car_combo = autocomplete.AutocompleteCombobox(frame, width=20, font=font_style)
-    car_combo.pack(side='top')
+    # #Vozilo label and combobox
+    # ttk.Label(frame, font=font_style, text='Vozilo').pack(side='top')
+    # car_combo = autocomplete.AutocompleteCombobox(frame, width=20, font=font_style)
+    # car_combo.pack(side='top')
     
-    #Registracija label and combobox
-    ttk.Label(frame, font=font_style, text='Reg. Broj').pack(side='top')
-    reg_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=database.reg_auto_complete, font=font_style)
-    reg_combo.pack(side='top')
-    reg_combo.bind('<Return>', get_reg_broj)
+    # #Registracija label and combobox
+    # ttk.Label(frame, font=font_style, text='Reg. Broj').pack(side='top')
+    # reg_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=database.reg_auto_complete, font=font_style)
+    # reg_combo.pack(side='top')
+    # reg_combo.bind('<Return>', get_reg_broj)
     
     #Repair list, treeview, scrollbar
     treeview_frame = tk.Frame(frame)
