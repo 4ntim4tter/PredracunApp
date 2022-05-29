@@ -6,6 +6,14 @@ from PIL import Image, ImageTk
 import tkinter.font as tkFont
 from ttkwidgets import autocomplete
 
+#check if /jobs/ data directory exists, create new if not
+JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '/jobs/')
+if not os.path.isdir(JOBS_STORAGE_PATH):
+    os.mkdir(JOBS_STORAGE_PATH)
+
+BACKGROUND_COLOR = '#1a79a9'
+FOREGROUND_COLOR = 'orange'
+
 #data class for parsing files to cache
 class DataVariables(object):
     def __init__(self):
@@ -78,14 +86,7 @@ class AutocompleteTemplate(object):
     
     def set_text(self, text):
         return self.autocomplete.set(text)
-    
-    
-#check if /jobs/ data directory exists, create new if not
-JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '/jobs/')
-if not os.path.isdir(JOBS_STORAGE_PATH):
-    os.mkdir(JOBS_STORAGE_PATH)
 
-BACKGROUND_COLOR = '#1a79a9'
 
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
@@ -111,25 +112,25 @@ def find_customer_window(master_window, parent_window, database, font_style):
             customer = next(item for item in database.customer_data if item['ime'] == name_autocomplete.get_text().title())
             car_autocomplete.set_text(customer['vozilo'])
             reg_autocomplete.set_text(customer['reg_broj'])
-            
-            csv_path = name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text()
-            
-            with open(f'{JOBS_STORAGE_PATH}/{csv_path}.csv', 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    tree_completed_jobs.insert('', tk.END, values=tuple(row.values()))
                     
         if reg_autocomplete.is_focused() and reg_autocomplete.get_text() != '':
             customer = next(item for item in database.customer_data if item['reg_broj'] == reg_autocomplete.get_text().upper())
             name_autocomplete.set_text(customer['ime'])
             car_autocomplete.set_text(customer['vozilo'])
             
+        if name_autocomplete.get_text() != '' and reg_autocomplete.get_text() != '':
             csv_path = name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text()
             
             with open(f'{JOBS_STORAGE_PATH}/{csv_path}.csv', 'r', encoding='utf-8') as file:
                 reader = csv.DictReader(file)
-                for row in reader:
-                    tree_completed_jobs.insert('', tk.END, values=tuple(row.values()), tags=('bg'))
+                for count, row in enumerate(reader):
+                    even_odd=''
+                    if count % 2 == 0:
+                        even_odd = 'even'
+                    else:
+                        even_odd = 'odd'
+                    tree_completed_jobs.insert('', tk.END, values=tuple(row.values()), tags=even_odd)
+
                     
     
     frame = tk.Frame(parent_window, border=5)
@@ -151,20 +152,24 @@ def find_customer_window(master_window, parent_window, database, font_style):
     treeview_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     treeview_frame.pack(side='left', fill='both', expand=True, pady=(2,0))
     
-    tree_completed_jobs_columns = ('dio', 'marka', 'količina', 'ukupno')
+    tree_completed_jobs_columns = ('dio', 'marka', 'količina', 'cijena', 'ukupno')
     
     tree_style = ttk.Style()
     tree_style.configure('Treeview.Heading', font=font_style)
     tree_style.configure('mystyle.Treeview', font=font_style)
     
     tree_completed_jobs = ttk.Treeview(treeview_frame, columns=tree_completed_jobs_columns, show='headings', style='mystyle.Treeview')
-    tree_completed_jobs.tag_configure('bg', background=BACKGROUND_COLOR)
+    tree_completed_jobs.tag_configure('even', background=BACKGROUND_COLOR)
+    tree_completed_jobs.tag_configure('odd', background='green')
     
     tree_completed_jobs.heading('dio', text='Dio')
     tree_completed_jobs.heading('marka', text='Marka')
     
     tree_completed_jobs.heading('količina', text='Količina')
     tree_completed_jobs.column('količina', anchor='e')
+    
+    tree_completed_jobs.heading('cijena', text='Cijena')
+    tree_completed_jobs.column('cijena', anchor='e')
     
     tree_completed_jobs.heading('ukupno', text='Ukupno')
     tree_completed_jobs.column('ukupno', anchor='e')
@@ -209,7 +214,7 @@ def add_customer_window(master_window, parent_window, database, font_style):
         if not os.path.isfile(f'{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv'):
             with open(f'{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv', 'a', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
-                writer.writerow(['dio', 'marka', 'količina', 'cijena'])
+                writer.writerow(['dio', 'marka', 'količina', 'cijena', 'ukupno'])
          
     
     frame = tk.Frame(parent_window)
