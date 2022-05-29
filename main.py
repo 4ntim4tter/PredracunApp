@@ -52,7 +52,7 @@ class EntryTemplate(object):
         self.frame = frame
         self.font_style = font_style
         
-        ttk.Label(self.frame, font=self.font_style, text=self.label_name).pack(side='top')
+        ttk.Label(self.frame, font=self.font_style, text=self.label_name,  background=BACKGROUND_COLOR).pack(side='top')
         self.add_text = tk.Entry(self.frame, width=30, font=self.font_style, justify='center')
         self.add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
         self.add_text.pack(side='top', pady=(5,0))
@@ -70,8 +70,8 @@ class AutocompleteTemplate(object):
         self.font_style = font_style
         self.database = database
         
-        ttk.Label(self.frame, font=self.font_style, text=self.label_name).pack(side='top')
-        self.autocomplete = autocomplete.AutocompleteCombobox(self.frame, width=20, completevalues=self.database, font=self.font_style, justify='center')
+        ttk.Label(self.frame, font=self.font_style, text=self.label_name, background=BACKGROUND_COLOR).pack(side='top')
+        self.autocomplete = autocomplete.AutocompleteCombobox(self.frame, width=30, completevalues=self.database, font=self.font_style, justify='center')
         self.autocomplete.option_add('*Tcombobox*Listbox.Justify', 'center')
         self.autocomplete.pack(side='top', pady=(5,0))
         
@@ -133,12 +133,12 @@ def find_customer_window(master_window, parent_window, database, font_style):
 
                     
     
-    frame = tk.Frame(parent_window, border=5)
+    frame = tk.Frame(parent_window)
     frame.pack(side='top')
     
-    fields_frame = tk.Frame(parent_window, border=5)
+    fields_frame = tk.Frame(parent_window)
     fields_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    fields_frame.pack(side='top', anchor='nw')
+    fields_frame.pack(side='left', expand=True, fill='both', anchor='nw')
      
     name_autocomplete = AutocompleteTemplate('Ime i Prezime', fields_frame, font_style, database.name_auto_complete)
     name_autocomplete.take_focus()
@@ -148,9 +148,9 @@ def find_customer_window(master_window, parent_window, database, font_style):
     
     
     #Repair list, treeview, scrollbar
-    treeview_frame = tk.Frame(parent_window)
+    treeview_frame = tk.Frame(fields_frame)
     treeview_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    treeview_frame.pack(side='left', fill='both', expand=True, pady=(2,0))
+    treeview_frame.pack(side='top', fill='both', expand=True, pady=(2,0))
     
     tree_completed_jobs_columns = ('dio', 'marka', 'količina', 'cijena', 'ukupno')
     
@@ -158,7 +158,7 @@ def find_customer_window(master_window, parent_window, database, font_style):
     tree_style.configure('Treeview.Heading', font=font_style)
     tree_style.configure('mystyle.Treeview', font=font_style)
     
-    tree_completed_jobs = ttk.Treeview(treeview_frame, columns=tree_completed_jobs_columns, show='headings', style='mystyle.Treeview')
+    tree_completed_jobs = ttk.Treeview(treeview_frame, columns=tree_completed_jobs_columns, show='headings', style='mystyle.Treeview', height=30)
     tree_completed_jobs.tag_configure('even', background=BACKGROUND_COLOR)
     tree_completed_jobs.tag_configure('odd', background='green')
     
@@ -177,14 +177,17 @@ def find_customer_window(master_window, parent_window, database, font_style):
     
     tree_completed_jobs.bind('<Double-Button-1>', tree_double_click)
 
-    
     scrollbar = tk.Scrollbar(treeview_frame, orient='vertical', command=tree_completed_jobs.yview)
     scrollbar.pack(side='right', fill='y')
-    
     tree_completed_jobs.config(yscrollcommand=scrollbar.set)
-
     
-    #Add new job button
+    
+    buttons_frame = tk.Frame(fields_frame)
+    buttons_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    buttons_frame.pack(side='top', anchor='nw')
+    
+    add_new_workorder = ttk.Button(buttons_frame, width=20,text='Unesi podatke', style='bttn_style.TButton')
+    add_new_workorder.pack(side='top', anchor='nw')
 
 
 #ADD CUSTOMER AND CREATE WORK DATA FILE
@@ -219,7 +222,7 @@ def add_customer_window(master_window, parent_window, database, font_style):
     
     frame = tk.Frame(parent_window)
     frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    frame.pack(side='top', anchor='nw', padx=1, pady=1)
+    frame.pack(side='top', anchor='nw')
     master_window.bind('<Return>', lambda event:add_to_csv())
     
     #Add new user to database
@@ -228,7 +231,7 @@ def add_customer_window(master_window, parent_window, database, font_style):
     car_entry = EntryTemplate('Vozilo', frame, font_style)
     reg_entry = EntryTemplate('Registracija', frame, font_style)
     
-    confirm_button = ttk.Button(frame, text='Unos u Bazu', style='bttn_style.TButton', command=add_to_csv)
+    confirm_button = ttk.Button(frame, text='Unos u Bazu', width=20, style='bttn_style.TButton', command=add_to_csv)
     confirm_button.pack(side='top', pady=(5, 0))
 
 
@@ -247,24 +250,23 @@ def main():
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
-    #master_window.geometry('640x480')
+    master_window.resizable(0,0)
     master_window.config(background=BACKGROUND_COLOR)
     
-    
     #create tiled background image from selected photo
-    background_image = Image.open('background.jpg')
-    bg_w, bg_h = background_image.size
-    new_image = Image.new('RGB', (2000, 2000))
-    w, h = new_image.size
+    # background_image = Image.open('background.jpg')
+    # bg_w, bg_h = background_image.size
+    # new_image = Image.new('RGB', (2000, 2000))
+    # w, h = new_image.size
 
-    for i in range(0, w, bg_w):
-        for j in range(0, h, bg_h):
-            new_image.paste(background_image,(i,j))
+    # for i in range(0, w, bg_w):
+    #     for j in range(0, h, bg_h):
+    #         new_image.paste(background_image,(i,j))
 
-    new_image.save('new_background_image.jpg')
-    new_background_image = ImageTk.PhotoImage(Image.open('new_background_image.jpg'))
-    bg_label = tk.Label(master_window, image=new_background_image)
-    bg_label.place(anchor='nw')
+    # new_image.save('new_background_image.jpg')
+    # new_background_image = ImageTk.PhotoImage(Image.open('new_background_image.jpg'))
+    # bg_label = tk.Label(master_window, image=new_background_image, pady=-50, padx=-50)
+    # bg_label.place(anchor='nw')
         
     #usable font style passed to functions
     font_style = tkFont.Font(family='Times New Roman', size=14, weight='bold')
@@ -275,9 +277,11 @@ def main():
     
     #search for customers button
     buttons_frame = tk.Frame(master_window)
+    buttons_frame.config(background=BACKGROUND_COLOR)
     buttons_frame.pack(side='top', anchor='nw')
     
     windows_frame = tk.Frame(master_window)
+    windows_frame.config(background=BACKGROUND_COLOR)
     windows_frame.pack(side='left', fill='both', expand=True)
     
     query_customer_button = ttk.Button(buttons_frame, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
