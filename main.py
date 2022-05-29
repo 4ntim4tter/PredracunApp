@@ -45,7 +45,7 @@ class EntryTemplate(object):
         self.font_style = font_style
         
         ttk.Label(self.frame, font=self.font_style, text=self.label_name).pack(side='top')
-        self.add_text = tk.Entry(self.frame, width=30, font=self.font_style)
+        self.add_text = tk.Entry(self.frame, width=30, font=self.font_style, justify='center')
         self.add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
         self.add_text.pack(side='top', pady=(5,0))
         
@@ -63,8 +63,8 @@ class AutocompleteTemplate(object):
         self.database = database
         
         ttk.Label(self.frame, font=self.font_style, text=self.label_name).pack(side='top')
-        self.autocomplete = autocomplete.AutocompleteCombobox(self.frame, width=20, completevalues=self.database, font=self.font_style)
-        #self.autocomplete.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
+        self.autocomplete = autocomplete.AutocompleteCombobox(self.frame, width=20, completevalues=self.database, font=self.font_style, justify='center')
+        self.autocomplete.option_add('*Tcombobox*Listbox.Justify', 'center')
         self.autocomplete.pack(side='top', pady=(5,0))
         
     def take_focus(self):
@@ -85,6 +85,8 @@ JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '/jobs/')
 if not os.path.isdir(JOBS_STORAGE_PATH):
     os.mkdir(JOBS_STORAGE_PATH)
 
+BACKGROUND_COLOR = '#1a79a9'
+
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
     with open('data.csv', 'w', newline='', encoding='utf-8') as file:
@@ -99,9 +101,12 @@ def create_new_customer(name:str, car:str, reg_broj:str):
 
 
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
-def find_customer_window(master_window, database, font_style):
+def find_customer_window(master_window, parent_window, database, font_style):
+    
+    def tree_double_click(event):
+        print('works')
       
-    def get_name(event):
+    def autofill_fields(event):
         if name_autocomplete.is_focused() and name_autocomplete.get_text() != '':
             customer = next(item for item in database.customer_data if item['ime'] == name_autocomplete.get_text().title())
             car_autocomplete.set_text(customer['vozilo'])
@@ -113,9 +118,7 @@ def find_customer_window(master_window, database, font_style):
                 reader = csv.DictReader(file)
                 for row in reader:
                     tree_completed_jobs.insert('', tk.END, values=tuple(row.values()))
-                
-            
-    def get_reg_broj(event):
+                    
         if reg_autocomplete.is_focused() and reg_autocomplete.get_text() != '':
             customer = next(item for item in database.customer_data if item['reg_broj'] == reg_autocomplete.get_text().upper())
             name_autocomplete.set_text(customer['ime'])
@@ -126,37 +129,27 @@ def find_customer_window(master_window, database, font_style):
             with open(f'{JOBS_STORAGE_PATH}/{csv_path}.csv', 'r', encoding='utf-8') as file:
                 reader = csv.DictReader(file)
                 for row in reader:
-                    tree_completed_jobs.insert('', tk.END, values=tuple(row.values()))
+                    tree_completed_jobs.insert('', tk.END, values=tuple(row.values()), tags=('bg'))
                     
     
-    frame = tk.Frame(master_window, border=5)
-    frame.pack(side='top', fill='both', expand=True)
-    master_window.bind('<Return>', get_name)
+    frame = tk.Frame(parent_window, border=5)
+    frame.pack(side='top')
+    
+    fields_frame = tk.Frame(parent_window, border=5)
+    fields_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    fields_frame.pack(side='top', anchor='nw')
      
-    name_autocomplete = AutocompleteTemplate('Ime i Prezime', frame, font_style, database.name_auto_complete)
-    car_autocomplete = AutocompleteTemplate('Vozilo', frame, font_style, None)
-    reg_autocomplete= AutocompleteTemplate('Registracija', frame, font_style, database.reg_auto_complete)
+    name_autocomplete = AutocompleteTemplate('Ime i Prezime', fields_frame, font_style, database.name_auto_complete)
+    name_autocomplete.take_focus()
+    car_autocomplete = AutocompleteTemplate('Vozilo', fields_frame, font_style, None)
+    reg_autocomplete= AutocompleteTemplate('Registracija', fields_frame, font_style, database.reg_auto_complete)
+    master_window.bind('<Return>', autofill_fields)
     
-    #Ime i prezime label and combobox
-    # ttk.Label(frame, font=font_style, text='Ime i Prezime').pack(side='top')
-    # name_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=database.name_auto_complete, font=font_style)
-    # name_combo.focus_set()
-    # name_combo.pack(side='top')
-    
-    # #Vozilo label and combobox
-    # ttk.Label(frame, font=font_style, text='Vozilo').pack(side='top')
-    # car_combo = autocomplete.AutocompleteCombobox(frame, width=20, font=font_style)
-    # car_combo.pack(side='top')
-    
-    # #Registracija label and combobox
-    # ttk.Label(frame, font=font_style, text='Reg. Broj').pack(side='top')
-    # reg_combo = autocomplete.AutocompleteCombobox(frame, width=20, completevalues=database.reg_auto_complete, font=font_style)
-    # reg_combo.pack(side='top')
-    # reg_combo.bind('<Return>', get_reg_broj)
     
     #Repair list, treeview, scrollbar
-    treeview_frame = tk.Frame(frame)
-    treeview_frame.pack(side='top', fill='both', expand=True)
+    treeview_frame = tk.Frame(parent_window)
+    treeview_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    treeview_frame.pack(side='left', fill='both', expand=True, pady=(2,0))
     
     tree_completed_jobs_columns = ('dio', 'marka', 'količina', 'ukupno')
     
@@ -165,16 +158,19 @@ def find_customer_window(master_window, database, font_style):
     tree_style.configure('mystyle.Treeview', font=font_style)
     
     tree_completed_jobs = ttk.Treeview(treeview_frame, columns=tree_completed_jobs_columns, show='headings', style='mystyle.Treeview')
+    tree_completed_jobs.tag_configure('bg', background=BACKGROUND_COLOR)
     
     tree_completed_jobs.heading('dio', text='Dio')
     tree_completed_jobs.heading('marka', text='Marka')
     
     tree_completed_jobs.heading('količina', text='Količina')
-    tree_completed_jobs.column('količina', anchor='e', width=75)
+    tree_completed_jobs.column('količina', anchor='e')
     
     tree_completed_jobs.heading('ukupno', text='Ukupno')
-    tree_completed_jobs.column('ukupno', anchor='e', width=75)
+    tree_completed_jobs.column('ukupno', anchor='e')
     tree_completed_jobs.pack(side='left', fill='both', expand=True)
+    
+    tree_completed_jobs.bind('<Double-Button-1>', tree_double_click)
 
     
     scrollbar = tk.Scrollbar(treeview_frame, orient='vertical', command=tree_completed_jobs.yview)
@@ -187,7 +183,7 @@ def find_customer_window(master_window, database, font_style):
 
 
 #ADD CUSTOMER AND CREATE WORK DATA FILE
-def add_customer_window(master_window, database, font_style):
+def add_customer_window(master_window, parent_window, database, font_style):
     
     def add_to_csv():
         if name_entry.get_text() == '' or car_entry.get_text() == '' or reg_entry.get_text() == '':
@@ -216,9 +212,9 @@ def add_customer_window(master_window, database, font_style):
                 writer.writerow(['dio', 'marka', 'količina', 'cijena'])
          
     
-    frame = tk.Frame(master_window)
-    frame.config(width=640, height=480)
-    frame.pack(side='top', fill='both', expand=True, padx=1, pady=1)
+    frame = tk.Frame(parent_window)
+    frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    frame.pack(side='top', anchor='nw', padx=1, pady=1)
     master_window.bind('<Return>', lambda event:add_to_csv())
     
     #Add new user to database
@@ -237,7 +233,7 @@ def main():
     database.parse_data()
     
     def clear_children():
-        list_of_slaves = master_window.pack_slaves()
+        list_of_slaves = windows_frame.pack_slaves()
         for frame in list_of_slaves:
             if '!frame' in str(frame):
                 frame.destroy()
@@ -246,8 +242,8 @@ def main():
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
-    master_window.geometry('640x480')
-    master_window.config(background='Gray')
+    #master_window.geometry('640x480')
+    master_window.config(background=BACKGROUND_COLOR)
     
     
     #create tiled background image from selected photo
@@ -270,21 +266,27 @@ def main():
     
     #button style for the application
     bttn_style = ttk.Style()
-    bttn_style.configure('bttn_style.TButton', font=font_style, background='Gray')
+    bttn_style.configure('bttn_style.TButton', font=font_style, background=BACKGROUND_COLOR)
     
     #search for customers button
-    query_customer_button = ttk.Button(master_window, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
-                                       command=lambda:[clear_children(), find_customer_window(master_window, database, font_style)])
-    query_customer_button.pack(side='top', anchor="center", padx=2, pady=(2, 5))
+    buttons_frame = tk.Frame(master_window)
+    buttons_frame.pack(side='top', anchor='nw')
+    
+    windows_frame = tk.Frame(master_window)
+    windows_frame.pack(side='left', fill='both', expand=True)
+    
+    query_customer_button = ttk.Button(buttons_frame, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
+                                       command=lambda:[clear_children(), find_customer_window(master_window, windows_frame, database, font_style)])
+    query_customer_button.pack(side='left', padx=2)
 
     
     #add new customer button
-    add_customer_button = ttk.Button(master_window, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
-                                     command=lambda:[clear_children(), add_customer_window(master_window, database, font_style)])
-    add_customer_button.pack(side='top', anchor="center", padx=2, pady=(0, 0))
+    add_customer_button = ttk.Button(buttons_frame, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
+                                     command=lambda:[clear_children(), add_customer_window(master_window, windows_frame, database, font_style)])
+    add_customer_button.pack(side='left', padx=2)
 
-    
-    
+
+    master_window.bind('<Escape>', lambda event:master_window.destroy())
     master_window.mainloop()
 
 if __name__ == '__main__':
