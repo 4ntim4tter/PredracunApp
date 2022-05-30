@@ -63,6 +63,7 @@ class EntryTemplate(object):
     def get_text(self):
         return self.add_text.get()       
 
+#base class for autocomplete entry widget
 class AutocompleteTemplate(object):
     def __init__(self, label_name, frame, font_style, database) -> None:
         self.label_name = label_name
@@ -87,6 +88,29 @@ class AutocompleteTemplate(object):
     def set_text(self, text):
         return self.autocomplete.set(text)
 
+#base class for treeview widget
+class TreeviewTemplate(object):
+    def __init__(self, treeview_frame, columns, style):
+        self.treeview_frame = treeview_frame
+        self.columns = columns
+        self.style = style
+        
+        self.treeview = ttk.Treeview(treeview_frame, columns=columns, show='headings', style='mystyle.Treeview', height=20)
+        
+        for column in columns:
+            self.treeview.heading(column, text=column.title())
+            self.treeview.column(column, anchor='center')
+            
+        scrollbar = tk.Scrollbar(treeview_frame, orient='vertical', command=self.treeview.yview)
+        scrollbar.pack(side='right', fill='y')
+        self.treeview.config(yscrollcommand=scrollbar.set)
+        
+        self.treeview.pack(side='left', fill='both', expand=True)
+    
+    def insert(self):
+        #create insert func for template
+        pass
+    
 
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
@@ -101,19 +125,16 @@ def create_new_customer(name:str, car:str, reg_broj:str):
         writer.writerow([name.strip().title(), car.strip().title(), reg_broj.strip().upper()])
         
 def new_workorder(parent_window, database, font_style, csv_file):
-    
     pass
 
 
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, database, font_style):
     
-    csv_file_path = ''
-    
     def tree_double_click(event):
-        print('works')
+        pass
       
-    def autofill_fields(event, csv_file_path):
+    def autofill_fields(event):
         if name_autocomplete.is_focused() and name_autocomplete.get_text() != '':
             customer = next(item for item in database.customer_data if item['ime'] == name_autocomplete.get_text().title())
             car_autocomplete.set_text(customer['vozilo'])
@@ -125,20 +146,24 @@ def find_customer_window(master_window, parent_window, database, font_style):
             car_autocomplete.set_text(customer['vozilo'])
             
         if name_autocomplete.get_text() != '' and reg_autocomplete.get_text() != '':
-            csv_path = name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text()
+            csv_file_path = name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper()
             
-            with open(f'{JOBS_STORAGE_PATH}\{csv_path}.csv', 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for count, row in enumerate(reader):
-                    even_odd=''
-                    if count % 2 == 0:
-                        even_odd = 'even'
-                    else:
-                        even_odd = 'odd'
-                    tree_completed_jobs.insert('', 'end', values=list(row.values()))
+            directory_contents = os.listdir(f'{JOBS_STORAGE_PATH}{csv_file_path}')
+            
+            for csv_file in directory_contents:
+                tree_jobs.insert('', 'end', csv_file.replace('.csv', ''), values=csv_file.replace('.csv', '').replace('_', '.'))
 
-            
-        csv_file_path = f'{JOBS_STORAGE_PATH}{csv_path}.csv'
+                with open(f'{JOBS_STORAGE_PATH}{csv_file_path}\\{csv_file}', 'r', encoding='utf-8') as file:
+                    reader = csv.DictReader(file)
+                    
+                    for count, row in enumerate(reader):
+                        even_odd=''
+                        if count % 2 == 0:
+                            even_odd = 'even'
+                        else:
+                            even_odd = 'odd'
+                    
+                    tree_jobs.insert(csv_file.replace('.csv', ''), 'end', values=list(row.values()))
                     
     
     frame = tk.Frame(parent_window)
@@ -152,7 +177,7 @@ def find_customer_window(master_window, parent_window, database, font_style):
     name_autocomplete.take_focus()
     car_autocomplete = AutocompleteTemplate('Vozilo', fields_frame, font_style, None)
     reg_autocomplete= AutocompleteTemplate('Registracija', fields_frame, font_style, database.reg_auto_complete)
-    master_window.bind('<Return>', lambda event:autofill_fields(event, csv_file_path))
+    master_window.bind('<Return>', lambda event:autofill_fields(event))
     
     
     #Repair list, treeview, scrollbar
@@ -160,36 +185,13 @@ def find_customer_window(master_window, parent_window, database, font_style):
     treeview_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     treeview_frame.pack(side='top', fill='both', expand=True, pady=(2,0))
     
-    tree_completed_jobs_columns = ('dio', 'marka', 'količina', 'cijena', 'ukupno', 'datum')
+    tree_completed_jobs_columns = ('datum', 'dijelovi', 'ruke')
     
     tree_style = ttk.Style()
     tree_style.configure('Treeview.Heading', font=font_style)
     tree_style.configure('mystyle.Treeview', font=font_style)
     
-    tree_completed_jobs = ttk.Treeview(treeview_frame, columns=tree_completed_jobs_columns, show='headings', style='mystyle.Treeview', height=20)
-    tree_completed_jobs.tag_configure('even', background=BACKGROUND_COLOR)
-    tree_completed_jobs.tag_configure('odd', background='green')
-    
-    tree_completed_jobs.heading('datum', text='Datum')
-    tree_completed_jobs.heading('dio', text='Dio')
-    tree_completed_jobs.heading('marka', text='Marka')
-    
-    tree_completed_jobs.heading('količina', text='Količina')
-    tree_completed_jobs.column('količina', anchor='e')
-    
-    tree_completed_jobs.heading('cijena', text='Cijena')
-    tree_completed_jobs.column('cijena', anchor='e')
-    
-    tree_completed_jobs.heading('ukupno', text='Ukupno')
-    tree_completed_jobs.column('ukupno', anchor='e')
-    tree_completed_jobs.pack(side='left', fill='both', expand=True)
-    
-    tree_completed_jobs.bind('<Double-Button-1>', tree_double_click)
-
-    scrollbar = tk.Scrollbar(treeview_frame, orient='vertical', command=tree_completed_jobs.yview)
-    scrollbar.pack(side='right', fill='y')
-    tree_completed_jobs.config(yscrollcommand=scrollbar.set)
-    
+    tree_jobs = TreeviewTemplate(treeview_frame, tree_completed_jobs_columns, tree_style)
     
     buttons_frame = tk.Frame(fields_frame)
     buttons_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
@@ -223,10 +225,11 @@ def add_customer_window(master_window, parent_window, database, font_style):
         
         #create work.csv file if one does not exist
         name_reg_nospace = name_entry.get_text().lower().replace(' ', '') + '_' + reg_entry.get_text().upper().replace(' ', '')
-        if not os.path.isfile(f'{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv'):
-            with open(f'{JOBS_STORAGE_PATH}/{name_reg_nospace}.csv', 'a', newline='', encoding='utf-8') as file:
-                writer = csv.writer(file)
-                writer.writerow(['dio', 'marka', 'količina', 'cijena', 'ukupno', 'datum'])
+        if not os.path.isdir(f'{JOBS_STORAGE_PATH}{name_reg_nospace}'):
+            os.mkdir(f'{JOBS_STORAGE_PATH}{name_reg_nospace}\\')
+            # with open(f'{JOBS_STORAGE_PATH}\{name_reg_nospace}\\', 'a', newline='', encoding='utf-8') as file:
+            #     writer = csv.writer(file)
+            #     writer.writerow(['dio', 'marka', 'količina', 'cijena', 'ukupno'])
          
     
     frame = tk.Frame(parent_window)
