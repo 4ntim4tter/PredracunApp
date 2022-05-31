@@ -11,8 +11,8 @@ JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '\jobs\\')
 if not os.path.isdir(JOBS_STORAGE_PATH):
     os.mkdir(JOBS_STORAGE_PATH)
 
-BACKGROUND_COLOR = '#1a79a9'
-FOREGROUND_COLOR = 'orange'
+BACKGROUND_COLOR = 'gray'
+FOREGROUND_COLOR = 'white'
 
 #data class for parsing files to cache
 class DataVariables(object):
@@ -98,7 +98,7 @@ class TreeviewTemplate(object):
         self.treeview = ttk.Treeview(treeview_frame, columns=columns, show='headings', style='mystyle.Treeview', height=20)
         
         for column in columns:
-            self.treeview.heading(column, text=column.title())
+            self.treeview.heading(column, text=column)
             self.treeview.column(column, anchor='center')
             
         scrollbar = tk.Scrollbar(treeview_frame, orient='vertical', command=self.treeview.yview)
@@ -107,9 +107,8 @@ class TreeviewTemplate(object):
         
         self.treeview.pack(side='left', fill='both', expand=True)
     
-    def insert(self):
-        #create insert func for template
-        pass
+    def insert(self, location, values, tag):
+        self.treeview.insert(location, 'end', values=values, tags=tag)
     
 
 #create data.csv if one does not exist in root
@@ -123,14 +122,24 @@ def create_new_customer(name:str, car:str, reg_broj:str):
     with open('data.csv', 'a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow([name.strip().title(), car.strip().title(), reg_broj.strip().upper()])
-        
-def new_workorder(parent_window, database, font_style, csv_file):
-    pass
 
+#add work order, create csv for workorder       
+def new_workorder(parent_window, database, font_style, csv_folder):
+    
+    frame = tk.Toplevel(parent_window)
+    file_path = JOBS_STORAGE_PATH + csv_folder+'\\'+str(datetime.date.today()) + '.csv'
+
+    if not os.path.isfile(file_path):
+        print(file_path)
+        with open(file_path, 'w', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno', 'ruke'])
+            
+    
 
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, database, font_style):
-    
+
     def tree_double_click(event):
         pass
       
@@ -148,23 +157,27 @@ def find_customer_window(master_window, parent_window, database, font_style):
         if name_autocomplete.get_text() != '' and reg_autocomplete.get_text() != '':
             csv_file_path = name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper()
             
-            directory_contents = os.listdir(f'{JOBS_STORAGE_PATH}{csv_file_path}')
+            directory_contents = os.listdir(f'{JOBS_STORAGE_PATH}{csv_file_path}') 
             
+            dijelovi = []
+            ruke = 0
             for csv_file in directory_contents:
-                tree_jobs.insert('', 'end', csv_file.replace('.csv', ''), values=csv_file.replace('.csv', '').replace('_', '.'))
-
                 with open(f'{JOBS_STORAGE_PATH}{csv_file_path}\\{csv_file}', 'r', encoding='utf-8') as file:
                     reader = csv.DictReader(file)
+                    for row in reader:
+                        dijelovi.append(row['dio']+',')
+                        ruke += int(row['ruke'])
+                        
+                tree_jobs.insert('', [csv_file.replace('.csv', ''), dijelovi, str(ruke)], tag='folder')
+                    # for count, row in enumerate(reader):
+                #         print(row.values())
+                #         even_odd=''
+                #         if count % 2 == 0:
+                #             even_odd = 'even'
+                #         else:
+                #             even_odd = 'odd'
                     
-                    for count, row in enumerate(reader):
-                        even_odd=''
-                        if count % 2 == 0:
-                            even_odd = 'even'
-                        else:
-                            even_odd = 'odd'
-                    
-                    tree_jobs.insert(csv_file.replace('.csv', ''), 'end', values=list(row.values()))
-                    
+                #         tree_jobs.insert(csv_file.replace('.csv', ''), list(row.values()), tag=even_odd)
     
     frame = tk.Frame(parent_window)
     frame.pack(side='top')
@@ -185,20 +198,22 @@ def find_customer_window(master_window, parent_window, database, font_style):
     treeview_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     treeview_frame.pack(side='top', fill='both', expand=True, pady=(2,0))
     
-    tree_completed_jobs_columns = ('datum', 'dijelovi', 'ruke')
+    tree_columns = ('datum', 'dijelovi', 'Ruke[KM]')
     
     tree_style = ttk.Style()
     tree_style.configure('Treeview.Heading', font=font_style)
     tree_style.configure('mystyle.Treeview', font=font_style)
     
-    tree_jobs = TreeviewTemplate(treeview_frame, tree_completed_jobs_columns, tree_style)
+    tree_jobs = TreeviewTemplate(treeview_frame, tree_columns, tree_style, )
     
     buttons_frame = tk.Frame(fields_frame)
     buttons_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    buttons_frame.pack(side='top', anchor='nw')
+    buttons_frame.pack(side='top', anchor='ne')
     
-    add_new_workorder = ttk.Button(buttons_frame, width=20,text='Unesi podatke', style='bttn_style.TButton')
-    add_new_workorder.pack(side='top', anchor='nw')
+    add_new_workorder = ttk.Button(buttons_frame, width=20,text='Unesi podatke', style='bttn_style.TButton', 
+                                   command=lambda:new_workorder(fields_frame, database, font_style, 
+                                                                name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper()))
+    add_new_workorder.pack(side='top')
 
 
 #ADD CUSTOMER AND CREATE WORK DATA FILE
@@ -297,13 +312,15 @@ def main():
     windows_frame.pack(side='left', fill='both', expand=True)
     
     query_customer_button = ttk.Button(buttons_frame, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
-                                       command=lambda:[clear_children(), find_customer_window(master_window, windows_frame, database, font_style)])
+                                       command=lambda:[clear_children(), 
+                                                       find_customer_window(master_window, windows_frame, database, font_style)])
     query_customer_button.pack(side='left', padx=2)
 
     
     #add new customer button
     add_customer_button = ttk.Button(buttons_frame, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
-                                     command=lambda:[clear_children(), add_customer_window(master_window, windows_frame, database, font_style)])
+                                     command=lambda:[clear_children(), 
+                                                     add_customer_window(master_window, windows_frame, database, font_style)])
     add_customer_button.pack(side='left', padx=2)
 
 
