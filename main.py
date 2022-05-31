@@ -247,12 +247,14 @@ def add_customer_window(master_window, parent_window, database, font_style):
             # with open(f'{JOBS_STORAGE_PATH}\{name_reg_nospace}\\', 'a', newline='', encoding='utf-8') as file:
             #     writer = csv.writer(file)
             #     writer.writerow(['dio', 'marka', 'količina', 'cijena', 'ukupno'])
-         
-    
+        
+        frame.destroy()
+             
     frame = tk.Frame(parent_window)
     frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     frame.pack(side='top', anchor='nw')
     master_window.bind('<Return>', lambda event:add_to_csv())
+    yield frame.winfo_name()
     
     #Add new user to database
     name_entry = EntryTemplate('Ime i Prezime', frame, font_style)
@@ -271,6 +273,7 @@ def main():
     
     def clear_children():
         list_of_slaves = windows_frame.pack_slaves()
+        print(list_of_slaves)
         for frame in list_of_slaves:
             if '!frame' in str(frame):
                 frame.destroy()
@@ -281,6 +284,7 @@ def main():
     master_window.title('Predračun')
     #master_window.resizable(1,1)
     master_window.attributes('-fullscreen', True)
+    master_window.attributes('-toolwindow', True)
     master_window.config(background=BACKGROUND_COLOR, )
     
     #create tiled background image from selected photo
@@ -320,11 +324,12 @@ def main():
                                        command=lambda:[clear_children(), 
                                                        find_customer_window(master_window, windows_frame, database, font_style)])
     query_customer_button.pack(side='left', padx=2)
-
+    find_customer_window(master_window, windows_frame, database, font_style)
     #add new customer button
     add_customer_button = ttk.Button(buttons_frame, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
-                                     command=lambda:[add_customer_window(master_window, windows_frame, database, font_style)])
+                                    command=lambda:[add_customer_window(master_window, windows_frame, database, font_style)])
     add_customer_button.pack(side='left', padx=2)
+
 
 
     master_window.bind('<Escape>', lambda event:master_window.destroy())
