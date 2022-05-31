@@ -110,6 +110,8 @@ class TreeviewTemplate(object):
     def insert(self, location, values, tag):
         self.treeview.insert(location, 'end', values=values, tags=tag)
     
+    def clear(self):
+        self.treeview.delete(*self.treeview.get_children())
 
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
@@ -130,12 +132,12 @@ def new_workorder(parent_window, database, font_style, csv_folder):
     file_path = JOBS_STORAGE_PATH + csv_folder+'\\'+str(datetime.date.today()) + '.csv'
 
     if not os.path.isfile(file_path):
-        print(file_path)
+        #print(file_path)
         with open(file_path, 'w', encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno', 'ruke'])
             
-    
+
 
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, database, font_style):
@@ -144,6 +146,7 @@ def find_customer_window(master_window, parent_window, database, font_style):
         pass
       
     def autofill_fields(event):
+        tree_jobs.clear()
         if name_autocomplete.is_focused() and name_autocomplete.get_text() != '':
             customer = next(item for item in database.customer_data if item['ime'] == name_autocomplete.get_text().title())
             car_autocomplete.set_text(customer['vozilo'])
@@ -166,8 +169,7 @@ def find_customer_window(master_window, parent_window, database, font_style):
                     reader = csv.DictReader(file)
                     for row in reader:
                         dijelovi.append(row['dio']+',')
-                        ruke += int(row['ruke'])
-                        
+                        ruke += int(row['ukupno'])           
                 tree_jobs.insert('', [csv_file.replace('.csv', ''), dijelovi, str(ruke)], tag='folder')
                     # for count, row in enumerate(reader):
                 #         print(row.values())
@@ -198,7 +200,7 @@ def find_customer_window(master_window, parent_window, database, font_style):
     treeview_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     treeview_frame.pack(side='top', fill='both', expand=True, pady=(2,0))
     
-    tree_columns = ('datum', 'dijelovi', 'Ruke[KM]')
+    tree_columns = ('Datum', 'Dijelovi', 'Ukupna Cijena[KM]')
     
     tree_style = ttk.Style()
     tree_style.configure('Treeview.Heading', font=font_style)
@@ -277,8 +279,9 @@ def main():
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
-    master_window.resizable(0,0)
-    master_window.config(background=BACKGROUND_COLOR)
+    #master_window.resizable(1,1)
+    master_window.attributes('-fullscreen', True)
+    master_window.config(background=BACKGROUND_COLOR, )
     
     #create tiled background image from selected photo
     # background_image = Image.open('background.jpg')
@@ -311,16 +314,16 @@ def main():
     windows_frame.config(background=BACKGROUND_COLOR)
     windows_frame.pack(side='left', fill='both', expand=True)
     
+    
+    #find customer button
     query_customer_button = ttk.Button(buttons_frame, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
                                        command=lambda:[clear_children(), 
                                                        find_customer_window(master_window, windows_frame, database, font_style)])
     query_customer_button.pack(side='left', padx=2)
 
-    
     #add new customer button
     add_customer_button = ttk.Button(buttons_frame, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
-                                     command=lambda:[clear_children(), 
-                                                     add_customer_window(master_window, windows_frame, database, font_style)])
+                                     command=lambda:[add_customer_window(master_window, windows_frame, database, font_style)])
     add_customer_button.pack(side='left', padx=2)
 
 
