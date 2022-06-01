@@ -47,15 +47,18 @@ class DataVariables(object):
 
 #base class for customer entry widgets
 class EntryTemplate(object):
-    def __init__(self, label_name, frame, font_style):
+    def __init__(self, label_name, frame, font_style, packing_style:tuple, label_packing:str):
         self.label_name = label_name
         self.frame = frame
         self.font_style = font_style
+        self.packing_style = packing_style
+        self.label_packing = label_packing
         
-        ttk.Label(self.frame, font=self.font_style, text=self.label_name,  background=BACKGROUND_COLOR).pack(side='top')
+        self.label = ttk.Label(self.frame, font=self.font_style, text=self.label_name,  background=BACKGROUND_COLOR)
+        self.label.pack(side=self.label_packing)
         self.add_text = tk.Entry(self.frame, width=30, font=self.font_style, justify='center')
         self.add_text.config(highlightbackground='black', highlightcolor='black', highlightthickness=2)
-        self.add_text.pack(side='top', pady=(5,0))
+        self.add_text.pack(side=self.packing_style[0], pady=self.packing_style[1])
         
     def set_focus(self):
         self.add_text.focus_set()
@@ -85,7 +88,7 @@ class AutocompleteTemplate(object):
     def get_text(self):
         return self.autocomplete.get()
     
-    def set_text(self, text):
+    def set_text(self, text:str):
         return self.autocomplete.set(text)
     
 
@@ -129,7 +132,17 @@ def create_new_customer(name:str, car:str, reg_broj:str):
 #add work order, create csv for workorder       
 def new_workorder(parent_window, database, font_style, csv_folder):
     
-    frame = tk.Toplevel(parent_window)
+    main_frame = tk.Toplevel(parent_window)
+    main_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    
+    part_frame = tk.Frame(main_frame)
+    part_frame.config(background=BACKGROUND_COLOR)
+    part_frame.pack(side='top')
+    
+    brand_frame = tk.Frame(main_frame)
+    brand_frame.config(background=BACKGROUND_COLOR)
+    brand_frame.pack(side='top')
+    
     file_path = JOBS_STORAGE_PATH + csv_folder+'\\'+str(datetime.date.today()) + '.csv'
 
     if not os.path.isfile(file_path) and csv_folder != '_':
@@ -137,6 +150,10 @@ def new_workorder(parent_window, database, font_style, csv_folder):
         with open(file_path, 'w', encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno', 'ruke'])
+    
+    part_entry = EntryTemplate('Dio', part_frame, font_style, ('left', (5,0)), 'left')
+    brand_entry = EntryTemplate('Marka', brand_frame, font_style, ('left', (5,0)), 'left')
+
             
 
 
@@ -264,10 +281,10 @@ def add_customer_window(master_window, parent_window, database, font_style):
     master_window.bind('<Return>', lambda event:add_to_csv())
     
     #Add new user to database
-    name_entry = EntryTemplate('Ime i Prezime', add_customer_frame, font_style)
+    name_entry = EntryTemplate('Ime i Prezime', add_customer_frame, font_style, ('top', (5,0)), 'top')
     name_entry.set_focus()
-    car_entry = EntryTemplate('Vozilo', add_customer_frame, font_style)
-    reg_entry = EntryTemplate('Registracija', add_customer_frame, font_style)
+    car_entry = EntryTemplate('Vozilo', add_customer_frame, font_style, ('top', (5,0)), 'top')
+    reg_entry = EntryTemplate('Registracija', add_customer_frame, font_style, ('top', (5,0)), 'top')
     
     confirm_button = ttk.Button(add_customer_frame, text='Unos u Bazu', width=20, style='bttn_style.TButton', command=add_to_csv)
     confirm_button.pack(side='top', pady=(5, 5))
