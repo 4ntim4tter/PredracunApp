@@ -167,15 +167,14 @@ class WorkorderRowTemplate(object):
         self.km_label = ttk.Label(self.km_frame, font=font_style, text='KM')
         self.km_label.config(background=BACKGROUND_COLOR)
         self.km_label.pack(side='right', anchor='ne')
-        
-    def entry_get_values(self):
-        return (self.price_entry.get_text(), self.amount_entry.get_text())
     
-    def entry_set_total(self, total):
-        self.total_entry.set_text(total)
-    
-    def entry_set_state(self, text:bool):
-        self.total_entry.set_state(text) 
+    def calculate_total(self):
+        if self.price_entry.get_text() != '' and self.amount_entry.get_text() != '':
+            total = self.price_entry.get_text() + '*' + self.amount_entry.get_text()
+            total = round(eval(total), 2)
+            self.total_entry.set_state(True)
+            self.total_entry.set_text(str(total))
+            self.total_entry.set_state(False)
            
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
@@ -189,8 +188,10 @@ def create_new_customer(name:str, car:str, reg_broj:str):
         writer = csv.writer(file)
         writer.writerow([name.strip().title(), car.strip().title(), reg_broj.strip().upper()])
 
+#needed global for adding new workorders
+ENTRY_COUNTER = 0
 #add work order, create csv for workorder       
-def new_workorder(parent_window, database, font_style, csv_folder, row):
+def new_workorder(parent_window, database, font_style, csv_folder):
     
     main_frame = tk.Toplevel(parent_window)
     main_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
@@ -200,33 +201,34 @@ def new_workorder(parent_window, database, font_style, csv_folder, row):
     child_frame.grid()
     
     #using recursion, try creating list
-    def creating_entries(child_frame, database, font_style, csv_folder, row):   
-        def calculate_price(amount, price):
-            if amount != '' and price != '':
-                total = amount + '*' + price
-                total = round(eval(total), 2)
-            first_entry.entry_set_state(True)
-            first_entry.entry_set_total(str(total))
-            first_entry.entry_set_state(False)
-        
-        file_path = JOBS_STORAGE_PATH + csv_folder+'\\'+str(datetime.date.today()) + '.csv'
+  
+    file_path = JOBS_STORAGE_PATH + csv_folder+'\\'+str(datetime.date.today()) + '.csv'
 
-        if not os.path.isfile(file_path) and csv_folder != '_':
-            with open(file_path, 'w', encoding='utf-8') as file:
-                writer = csv.writer(file)
-                writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno', 'ruke'])
-        
-        first_entry = WorkorderRowTemplate(child_frame, font_style, row)
-        
-        add_new_entry_button = ttk.Button(child_frame, width=3, text='+', style='bttn_style.TButton', 
-                                        command=lambda:creating_entries(child_frame, database, font_style, csv_folder, row+1))
-        add_new_entry_button.grid(row = 0, column= 0)
-        
-        main_frame.focus_set()
-        main_frame.bind('<Return>', lambda event:calculate_price(first_entry.entry_get_values()[0], first_entry.entry_get_values()[1]))
-        main_frame.bind('<Escape>', lambda event:main_frame.destroy())
-        
-    creating_entries(child_frame, database, font_style, csv_folder, row)
+    if not os.path.isfile(file_path) and csv_folder != '_':
+        with open(file_path, 'w', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno', 'ruke'])
+    
+    entry_list = []
+    global ENTRY_COUNTER
+    first_entry = WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER)
+    entry_list.append(first_entry)
+
+    def increment_counter():
+        global ENTRY_COUNTER
+        ENTRY_COUNTER += 1
+    add_new_entry_button = ttk.Button(child_frame, width=3, text='+', style='bttn_style.TButton', 
+                                    command=lambda:[increment_counter(), entry_list.append(WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER)), main_frame.update()])
+    add_new_entry_button.grid(row = 0, column= 0)
+    
+    def calculate_totals(list_of_workorders):
+        for entry in list_of_workorders:
+            entry.calculate_total()
+    
+    main_frame.focus_set()
+    main_frame.bind('<Return>', lambda event:calculate_totals(entry_list))
+    main_frame.bind('<Escape>', lambda event:main_frame.destroy())
+
     
             
 
@@ -307,7 +309,7 @@ def find_customer_window(master_window, parent_window, database, font_style):
     
     add_new_workorder = ttk.Button(buttons_frame, width=20,text='Unesi podatke', style='bttn_style.TButton', 
                                    command=lambda:new_workorder(fields_frame, database, font_style, 
-                                                                name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper(), 0))
+                                                                name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper()))
     add_new_workorder.pack(side='top')
 
 
