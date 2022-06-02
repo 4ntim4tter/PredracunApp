@@ -243,6 +243,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
                 writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
                 for row in list_of_workorders:
                     writer.writerow(row.get_all_values())
+
     
     #button to create and populate a new CSV file
     insert_button_frame = tk.Frame(child_frame)
@@ -250,7 +251,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se', pady=(3, 0))
     
     insert_contents = ttk.Button(insert_button_frame, text="Otvori novi predračun", width=19, style='bttn_style.TButton', 
-                                 command=lambda:[populate_csv(entry_list), main_frame.destroy()])
+                                 command=lambda:[populate_csv(entry_list), parent_window.focus_set(), parent_window.event_generate('<Return>'), main_frame.destroy()])
     insert_contents.grid()
     
     
@@ -318,7 +319,6 @@ def find_customer_window(master_window, parent_window, database, font_style):
     car_autocomplete = AutocompleteTemplate('Vozilo', fields_frame, font_style, None)
     reg_autocomplete= AutocompleteTemplate('Registracija', fields_frame, font_style, database.reg_auto_complete)
     master_window.bind('<Return>', lambda event:autofill_fields(event))
-    
     
     #Repair list, treeview, scrollbar
     treeview_frame = tk.Frame(fields_frame)
