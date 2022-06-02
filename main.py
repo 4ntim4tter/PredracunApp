@@ -204,7 +204,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     file_path = JOBS_STORAGE_PATH + csv_folder+'\\'+str(datetime.date.today()) + '.csv'
 
     if not os.path.isfile(file_path) and csv_folder != '_':
-        with open(file_path, 'w', encoding='utf-8') as file:
+        with open(file_path, 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
     
