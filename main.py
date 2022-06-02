@@ -192,6 +192,7 @@ def create_new_customer(name:str, car:str, reg_broj:str):
 
 #needed global for adding new workorders
 ENTRY_COUNTER = 0
+
 #add work order, create csv for workorder       
 def new_workorder(master_window, parent_window, database, font_style, csv_folder):
     
@@ -209,10 +210,12 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     first_entry = WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER)
     entry_list.append(first_entry)
 
-
+    #increment global counter for adding new forms
     def increment_counter():
         global ENTRY_COUNTER
         ENTRY_COUNTER += 1
+
+    #create new part form
     add_new_entry_button = ttk.Button(child_frame, width=3, text='+', style='bttn_style.TButton', 
                                     command=lambda:[increment_counter(), 
                                                     entry_list.append(WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER)), 
@@ -221,12 +224,12 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
                                                     cancel_button_frame.grid(row=ENTRY_COUNTER+1, column=4, sticky='se')])
     add_new_entry_button.grid(row=0, column=0)
     
-    
+    #calculate totals of price and amount fileds
     def calculate_totals(list_of_workorders):
         for entry in list_of_workorders:
             entry.calculate_total()
     
-    
+    #modify global counter variable
     def set_counter_to_zero():
         global ENTRY_COUNTER
         ENTRY_COUNTER = 0
@@ -302,16 +305,6 @@ def find_customer_window(master_window, parent_window, database, font_style):
                 tree_jobs.insert('', [csv_file.replace('.csv', ''), parts, str(total_price)], tag='folder')
                 parts = []
                 total_price = 0
-                    # for count, row in enumerate(reader):
-                #         print(row.values())
-                #         even_odd=''
-                #         if count % 2 == 0:
-                #             even_odd = 'even'
-                #         else:
-                #             even_odd = 'odd'
-                    
-                #         tree_jobs.insert(csv_file.replace('.csv', ''), list(row.values()), tag=even_odd)
-    
     
     find_customer_frame = tk.Frame(parent_window)
     find_customer_frame.pack(side='top')
@@ -343,7 +336,8 @@ def find_customer_window(master_window, parent_window, database, font_style):
     buttons_frame = tk.Frame(fields_frame)
     buttons_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     buttons_frame.pack(side='top', anchor='ne')
-    
+
+    #check if data is entered in customer query
     def is_data_entered(name, car, reg):
         if name == '' or car == '' or reg == '':
             messagebox.showerror('Upozorenje!', 'Ne možete unijeti novi predračun bez pronađene mušterije.')
