@@ -171,6 +171,7 @@ class WorkorderRowTemplate(object):
             self.total_entry.set_state(False)
     
     def get_all_values(self):
+        self.calculate_total()
         return [self.part_entry.get_text().strip().title(), 
                 self.brand_entry.get_text().strip().title(), 
                 self.price_entry.get_text(), 
@@ -201,12 +202,13 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     child_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     child_frame.grid()
     
-    file_path = JOBS_STORAGE_PATH + csv_folder+'\\'+str(datetime.date.today()) + '.csv'
+    file_path = JOBS_STORAGE_PATH + csv_folder + '\\' + str(datetime.date.today().strftime('%d_%b_%Y')) + '_' + str(len(os.listdir(JOBS_STORAGE_PATH + csv_folder))) + '.csv'
 
     if not os.path.isfile(file_path) and csv_folder != '_':
         with open(file_path, 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
+    
     
     entry_list = []
     global ENTRY_COUNTER
@@ -251,7 +253,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se', pady=(3, 0))
     
     insert_contents = ttk.Button(insert_button_frame, text="Otvori novi predračun", width=19, style='bttn_style.TButton', 
-                                 command=lambda:populate_csv(entry_list))
+                                 command=lambda:[populate_csv(entry_list), main_frame.destroy()])
     insert_contents.grid()
     
     
