@@ -203,12 +203,6 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     child_frame.grid()
     
     file_path = JOBS_STORAGE_PATH + csv_folder + '\\' + str(datetime.date.today().strftime('%d_%b_%Y')) + '_' + str(len(os.listdir(JOBS_STORAGE_PATH + csv_folder))) + '.csv'
-
-    if not os.path.isfile(file_path) and csv_folder != '_':
-        with open(file_path, 'w', newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
-    
     
     entry_list = []
     global ENTRY_COUNTER
@@ -237,17 +231,17 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
         global ENTRY_COUNTER
         ENTRY_COUNTER = 0
         main_frame.destroy()
-        
-        for slave in parent_window.pack_slaves():
-            slave.update()
-      
-        
-    def populate_csv(list_of_workorders):
-        with open(file_path, 'a', newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            for row in list_of_workorders:
-                writer.writerow(row.get_all_values())
     
+    #create and populate a new CSV file    
+    def populate_csv(list_of_workorders):
+        if not os.path.isfile(file_path) and csv_folder != '_':
+            with open(file_path, 'a', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
+                for row in list_of_workorders:
+                    writer.writerow(row.get_all_values())
+    
+    #button to create and populate a new CSV file
     insert_button_frame = tk.Frame(child_frame)
     insert_button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se', pady=(3, 0))
@@ -257,6 +251,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     insert_contents.grid()
     
     
+    #cancel workorder button
     cancel_button_frame = tk.Frame(child_frame)
     cancel_button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     cancel_button_frame.grid(row=ENTRY_COUNTER+1, column=4, sticky='se', pady=(3, 0))
@@ -266,11 +261,10 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     cancel_contents.grid()
     
     
+    #destroy main frame and calculate prices for workorder on bind press
     main_frame.focus_set()
     main_frame.bind('<Return>', lambda event:calculate_totals(entry_list))
     main_frame.bind('<Escape>', lambda event:main_frame.destroy())
-    
-    
     main_frame.protocol('WM_DELETE_WINDOW', set_counter_to_zero)
 
 
