@@ -13,6 +13,8 @@ if not os.path.isdir(JOBS_STORAGE_PATH):
 
 BACKGROUND_COLOR = 'gray'
 FOREGROUND_COLOR = 'white'
+#needed global for adding new workorders
+ENTRY_COUNTER = 0
 
 #data class for parsing files to cache
 class DataVariables(object):
@@ -190,9 +192,6 @@ def create_new_customer(name:str, car:str, reg_broj:str):
         writer = csv.writer(file)
         writer.writerow([name.strip().title(), car.strip().title(), reg_broj.strip().upper()])
 
-#needed global for adding new workorders
-ENTRY_COUNTER = 0
-
 #add work order, create csv for workorder       
 def new_workorder(master_window, parent_window, database, font_style, csv_folder):
     
@@ -203,7 +202,11 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     child_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     child_frame.grid()
     
-    file_path = JOBS_STORAGE_PATH + csv_folder + '\\' + str(datetime.date.today().strftime('%d_%b_%Y')) + '_' + str(len(os.listdir(JOBS_STORAGE_PATH + csv_folder))) + '.csv'
+    todays_date = datetime.date.today().strftime('%d.%m.%Y')
+    length_of_customer_directory = len(os.listdir(JOBS_STORAGE_PATH + csv_folder))
+    print(type(todays_date))
+    date_file_name = f'{todays_date}({length_of_customer_directory}).csv'
+    file_path = f'{JOBS_STORAGE_PATH}{csv_folder}\\{date_file_name}'
     
     entry_list = []
     global ENTRY_COUNTER
