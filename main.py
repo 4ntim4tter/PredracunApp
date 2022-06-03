@@ -113,6 +113,7 @@ class TreeviewTemplate(object):
         self.style = style
         
         self.treeview = ttk.Treeview(treeview_frame, columns=columns, show='headings', style='mystyle.Treeview', height=20)
+        self.treeview.config()
         
         for column in columns:
             self.treeview.heading(column, text=column)
@@ -125,10 +126,16 @@ class TreeviewTemplate(object):
         self.treeview.pack(side='left', fill='both', expand=True)
     
     def insert(self, location, values, tag):
-        self.treeview.insert(location, 'end', values=values, tags=tag)
-    
+        self.treeview.insert(location, 0, values=values, tags=tag)
+        
     def clear(self):
         self.treeview.delete(*self.treeview.get_children())
+        
+    def delete(self):
+        self.treeview.delete(self.treeview.selection())
+        
+    def get_date(self):
+        return
 
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
@@ -173,12 +180,15 @@ class WorkorderRowTemplate(object):
             self.total_entry.set_state(False)
     
     def get_all_values(self):
-        self.calculate_total()
-        return [self.part_entry.get_text().strip().title(), 
-                self.brand_entry.get_text().strip().title(), 
-                self.price_entry.get_text(), 
-                self.amount_entry.get_text(), 
-                self.total_entry.get_text()]
+        if self.part_entry.get_text() != '' or self.brand_entry.get_text() != '' or self.price_entry.get_text() != '' or self.amount_entry.get_text() != '':
+            self.calculate_total()
+            return [self.part_entry.get_text().strip().title(), 
+                    self.brand_entry.get_text().strip().title(), 
+                    self.price_entry.get_text(), 
+                    self.amount_entry.get_text(), 
+                    self.total_entry.get_text()]
+        else:
+            return None
                   
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
@@ -204,7 +214,6 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     
     todays_date = datetime.date.today().strftime('%d.%m.%Y')
     length_of_customer_directory = len(os.listdir(JOBS_STORAGE_PATH + csv_folder))
-    print(type(todays_date))
     date_file_name = f'{todays_date}({length_of_customer_directory}).csv'
     file_path = f'{JOBS_STORAGE_PATH}{csv_folder}\\{date_file_name}'
     
@@ -245,7 +254,8 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
                 writer = csv.writer(file)
                 writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
                 for row in list_of_workorders:
-                    writer.writerow(row.get_all_values())
+                    if row.get_all_values() is not None:
+                        writer.writerow(row.get_all_values())
 
     
     #button to create and populate a new CSV file
@@ -253,9 +263,9 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     insert_button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se', pady=(3, 0))
     
-    insert_contents = ttk.Button(insert_button_frame, text="Otvori novi predračun", width=19, style='bttn_style.TButton', 
-                                 command=lambda:[populate_csv(entry_list), parent_window.focus_set(), parent_window.event_generate('<Return>'), main_frame.destroy()])
-    insert_contents.grid()
+    insert_contents_button = ttk.Button(insert_button_frame, text="Otvori novi predračun", width=19, style='bttn_style.TButton', 
+                                 command=lambda:[populate_csv(entry_list), parent_window.focus_set(), parent_window.event_generate('<Return>'),  set_counter_to_zero(),main_frame.destroy()])
+    insert_contents_button.grid()
     
     
     #cancel workorder button
@@ -263,9 +273,9 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     cancel_button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     cancel_button_frame.grid(row=ENTRY_COUNTER+1, column=4, sticky='se', pady=(3, 0))
     
-    cancel_contents = ttk.Button(cancel_button_frame, text="Odustani", width=19, style='bttn_style.TButton', 
+    cancel_contents_button = ttk.Button(cancel_button_frame, text="Odustani", width=19, style='bttn_style.TButton', 
                                  command=lambda:set_counter_to_zero())
-    cancel_contents.grid()
+    cancel_contents_button.grid()
     
     
     #destroy main frame and calculate prices for workorder on bind press
@@ -277,10 +287,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
 
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, database, font_style):
-
-    def tree_double_click(event):
-        pass
-      
+    
     def autofill_fields(event):
         tree_jobs.clear()
         if name_autocomplete.is_focused() and name_autocomplete.get_text() != '':
@@ -336,10 +343,14 @@ def find_customer_window(master_window, parent_window, database, font_style):
     
     tree_jobs = TreeviewTemplate(treeview_frame, tree_columns, tree_style)
     
-    buttons_frame = tk.Frame(fields_frame)
-    buttons_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    buttons_frame.pack(side='top', anchor='ne')
+    buttons_frame_add = tk.Frame(fields_frame)
+    buttons_frame_add.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    buttons_frame_add.pack(side='left', anchor='nw')
 
+    buttons_frame_delete = tk.Frame(fields_frame)
+    buttons_frame_delete.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    buttons_frame_delete.pack(side='right', anchor='ne')
+    
     #check if data is entered in customer query
     def is_data_entered(name, car, reg):
         if name == '' or car == '' or reg == '':
@@ -350,12 +361,16 @@ def find_customer_window(master_window, parent_window, database, font_style):
                       database, 
                       font_style, 
                       name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper())
+    
+    delete_workorder_button = ttk.Button(buttons_frame_delete, width=20,text='Obriši Predračun', style='bttn_style.TButton', 
+                                   command=lambda:print("add command"))
+    delete_workorder_button.pack(side='top', anchor='nw')
         
-    add_new_workorder = ttk.Button(buttons_frame, width=20,text='Novi Predračun', style='bttn_style.TButton', 
+    add_new_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Novi Predračun', style='bttn_style.TButton', 
                                    command=lambda:is_data_entered(name_autocomplete.get_text(), car_autocomplete.get_text(), reg_autocomplete.get_text()))
-    add_new_workorder.pack(side='top')
-
-
+    add_new_workorder_button.pack(side='top')
+    
+    
 #ADD CUSTOMER AND CREATE WORK DATA FILE
 def add_customer_window(master_window, parent_window, database, font_style):
     
