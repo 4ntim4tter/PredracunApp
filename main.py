@@ -92,12 +92,6 @@ class AutocompleteTemplate(object):
         self.autocomplete.option_add('*Tcombobox*Listbox.Justify', 'center')
         self.autocomplete.pack(side='top', pady=(5,0))
         
-    def take_focus(self):
-        self.autocomplete.focus_set()
-        
-    def is_focused(self):
-        return self.autocomplete.focus_get()
-        
     def get_text(self):
         return self.autocomplete.get()
     
@@ -289,13 +283,15 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
 def find_customer_window(master_window, parent_window, database, font_style):
     
     def autofill_fields(event):
+        
         tree_jobs.clear()
-        if name_autocomplete.is_focused() and name_autocomplete.get_text() != '':
+
+        if name_autocomplete.get_text() != '':
             customer = next(item for item in database.customer_data if item['ime'] == name_autocomplete.get_text().title())
             car_autocomplete.set_text(customer['vozilo'])
             reg_autocomplete.set_text(customer['reg_broj'])
-                    
-        if reg_autocomplete.is_focused() and reg_autocomplete.get_text() != '':
+            
+        if reg_autocomplete.get_text() != '':
             customer = next(item for item in database.customer_data if item['reg_broj'] == reg_autocomplete.get_text().upper())
             name_autocomplete.set_text(customer['ime'])
             car_autocomplete.set_text(customer['vozilo'])
@@ -325,10 +321,8 @@ def find_customer_window(master_window, parent_window, database, font_style):
     fields_frame.pack(side='left', expand=True, fill='both', anchor='nw')
     
     name_autocomplete = AutocompleteTemplate('Ime i Prezime', fields_frame, font_style, database.name_auto_complete)
-    name_autocomplete.take_focus()
     car_autocomplete = AutocompleteTemplate('Vozilo', fields_frame, font_style, None)
     reg_autocomplete= AutocompleteTemplate('Registracija', fields_frame, font_style, database.reg_auto_complete)
-    master_window.bind('<Return>', lambda event:autofill_fields(event))
     
     #Repair list, treeview, scrollbar
     treeview_frame = tk.Frame(fields_frame)
@@ -343,14 +337,6 @@ def find_customer_window(master_window, parent_window, database, font_style):
     
     tree_jobs = TreeviewTemplate(treeview_frame, tree_columns, tree_style)
     
-    buttons_frame_add = tk.Frame(fields_frame)
-    buttons_frame_add.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    buttons_frame_add.pack(side='left', anchor='nw')
-
-    buttons_frame_delete = tk.Frame(fields_frame)
-    buttons_frame_delete.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    buttons_frame_delete.pack(side='right', anchor='ne')
-    
     #check if data is entered in customer query
     def is_data_entered(name, car, reg):
         if name == '' or car == '' or reg == '':
@@ -362,13 +348,26 @@ def find_customer_window(master_window, parent_window, database, font_style):
                       font_style, 
                       name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper())
     
+    #binds and buttons
+    #delete selection button
+    buttons_frame_delete = tk.Frame(fields_frame)
+    buttons_frame_delete.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    buttons_frame_delete.pack(side='right', anchor='ne')
+    
     delete_workorder_button = ttk.Button(buttons_frame_delete, width=20,text='Obriši Predračun', style='bttn_style.TButton', 
                                    command=lambda:print("add command"))
     delete_workorder_button.pack(side='top', anchor='nw')
-        
+    
+    #add new workorder button
+    buttons_frame_add = tk.Frame(fields_frame)
+    buttons_frame_add.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    buttons_frame_add.pack(side='left', anchor='nw') 
+      
     add_new_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Novi Predračun', style='bttn_style.TButton', 
                                    command=lambda:is_data_entered(name_autocomplete.get_text(), car_autocomplete.get_text(), reg_autocomplete.get_text()))
     add_new_workorder_button.pack(side='top')
+    
+    master_window.bind('<Return>', lambda event:autofill_fields(event))
     
     
 #ADD CUSTOMER AND CREATE WORK DATA FILE
