@@ -98,6 +98,9 @@ class AutocompleteTemplate(object):
     def set_text(self, text:str):
         return self.autocomplete.set(text)
     
+    def clear(self):
+        self.autocomplete.set('')
+    
 
 #base class for treeview widget
 class TreeviewTemplate(object):
@@ -106,16 +109,17 @@ class TreeviewTemplate(object):
         self.columns = columns
         self.style = style
         
-        self.treeview = ttk.Treeview(treeview_frame, columns=columns, show='headings', style='mystyle.Treeview', height=20)
+        self.treeview = ttk.Treeview(treeview_frame, columns=columns, show='headings', style='mystyle.Treeview')
         self.treeview.config()
         
-        for column in columns:
-            self.treeview.heading(column, text=column)
-            self.treeview.column(column, anchor='center')
+        if self.columns is not None:
+            for column in self.columns:
+                self.treeview.heading(column, text=column)
+                self.treeview.column(column, anchor='center')
             
-        scrollbar = tk.Scrollbar(treeview_frame, orient='vertical', command=self.treeview.yview)
-        scrollbar.pack(side='right', fill='y')
-        self.treeview.config(yscrollcommand=scrollbar.set)
+        self.scrollbar = tk.Scrollbar(treeview_frame, orient='vertical', command=self.treeview.yview)
+        self.scrollbar.pack(side='right', fill='y')
+        self.treeview.config(yscrollcommand=self.scrollbar.set)
         
         self.treeview.pack(side='left', fill='both', expand=True)
     
@@ -128,8 +132,8 @@ class TreeviewTemplate(object):
     def delete(self):
         self.treeview.delete(self.treeview.selection())
         
-    def get_date(self):
-        return
+    def bind_key(self, sequence, function):
+        self.treeview.bind(sequence=sequence, func=function)
 
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
@@ -195,6 +199,26 @@ def create_new_customer(name:str, car:str, reg_broj:str):
     with open('data.csv', 'a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow([name.strip().title(), car.strip().title(), reg_broj.strip().upper()])
+
+#helper function to fill the workorder tree    
+def fill_workorder_tree(name, reg, tree):
+    if name != '' and reg != '':
+        csv_file_path = name.lower().replace(' ', '') + '_' + reg.upper().replace(' ','')
+        
+        directory_contents = os.listdir(f'{JOBS_STORAGE_PATH}{csv_file_path}') 
+        
+        parts = []
+        total_price = 0
+        for csv_file in directory_contents:
+            with open(f'{JOBS_STORAGE_PATH}{csv_file_path}\\{csv_file}', 'r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    parts.append(row['dio']+',')
+                    parts[-1] = parts[-1].strip(',')
+                    total_price += int(row['ukupno'])           
+            tree.insert('', [csv_file.replace('.csv', ''), parts, str(total_price)], tag='folder')
+            parts = []
+            total_price = 0
 
 #add work order, create csv for workorder       
 def new_workorder(master_window, parent_window, database, font_style, csv_folder):
@@ -280,49 +304,71 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
 
 
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
-def find_customer_window(master_window, parent_window, database, font_style):
+def find_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style):
     
-    def autofill_fields(event):
+    #fill customer tree
+    def fill_from_database():
+        selected = tree_customer_database.treeview.selection()
+        selected_list = tree_customer_database.treeview.item(selected[0])['values'][0].split(':')
         
+        with open('data.csv', 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row['ime'] == selected_list[0].replace('_', ' ') and row['reg_broj'] == selected_list[1].replace('_', ' '):
+                    name_autocomplete.set_text(row['ime'])
+                    car_autocomplete.set_text(row['vozilo'])
+                    reg_autocomplete.set_text(row['reg_broj'])
+                    
+                    fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
+            
+    #fill query fields
+    def autofill_fields():
         tree_jobs.clear()
+        name = name_autocomplete.get_text()
+        car = car_autocomplete.get_text()
+        reg = reg_autocomplete.get_text()
+        
+        name_autocomplete.clear()
+        car_autocomplete.clear()
+        reg_autocomplete.clear()
 
-        if name_autocomplete.get_text() != '':
-            customer = next(item for item in database.customer_data if item['ime'] == name_autocomplete.get_text().title())
+        if name != '':
+            customer = next(item for item in database.customer_data if item['ime'] == name.title())
+            name_autocomplete.set_text(customer['ime'])
             car_autocomplete.set_text(customer['vozilo'])
             reg_autocomplete.set_text(customer['reg_broj'])
             
-        if reg_autocomplete.get_text() != '':
-            customer = next(item for item in database.customer_data if item['reg_broj'] == reg_autocomplete.get_text().upper())
-            name_autocomplete.set_text(customer['ime'])
-            car_autocomplete.set_text(customer['vozilo'])
-            
-        if name_autocomplete.get_text() != '' and reg_autocomplete.get_text() != '':
-            csv_file_path = name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper()
-            
-            directory_contents = os.listdir(f'{JOBS_STORAGE_PATH}{csv_file_path}') 
-            
-            parts = []
-            total_price = 0
-            for csv_file in directory_contents:
-                with open(f'{JOBS_STORAGE_PATH}{csv_file_path}\\{csv_file}', 'r', encoding='utf-8') as file:
-                    reader = csv.DictReader(file)
-                    for row in reader:
-                        parts.append(row['dio']+',')
-                        total_price += int(row['ukupno'])           
-                tree_jobs.insert('', [csv_file.replace('.csv', ''), parts, str(total_price)], tag='folder')
-                parts = []
-                total_price = 0
+        if reg != '':
+            customer = next(item for item in database.customer_data if item['reg_broj'] == reg.upper())
+            if customer['ime'] != name:
+                name_autocomplete.set_text(customer['ime'])
+                car_autocomplete.set_text(customer['vozilo'])
+                reg_autocomplete.set_text(customer['reg_broj'])
+                
+        fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
     
-    find_customer_frame = tk.Frame(parent_window)
-    find_customer_frame.pack(side='top')
+    #customer treeview
+    customer_database_columns = ['Mušterija']
     
+    tree_customer_database = TreeviewTemplate(parent_window2, customer_database_columns, tree_style)
+    tree_customer_database.bind_key('<Double-Button-1>', lambda event:fill_from_database())
+    
+    for column in customer_database_columns:
+        tree_customer_database.treeview.column(column, width=250)
+    
+    with open('data.csv', 'r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            tree_customer_database.insert('', f"{row['ime'].replace(' ', '_')}:{row['reg_broj'].replace(' ','_')}", 'None')
+    
+    #name, car, registration number
     fields_frame = tk.Frame(parent_window)
     fields_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    fields_frame.pack(side='left', expand=True, fill='both', anchor='nw')
+    fields_frame.pack(side='left', expand=True, fill='both')
     
     name_autocomplete = AutocompleteTemplate('Ime i Prezime', fields_frame, font_style, database.name_auto_complete)
     car_autocomplete = AutocompleteTemplate('Vozilo', fields_frame, font_style, None)
-    reg_autocomplete= AutocompleteTemplate('Registracija', fields_frame, font_style, database.reg_auto_complete)
+    reg_autocomplete = AutocompleteTemplate('Registracija', fields_frame, font_style, database.reg_auto_complete)
     
     #Repair list, treeview, scrollbar
     treeview_frame = tk.Frame(fields_frame)
@@ -330,10 +376,6 @@ def find_customer_window(master_window, parent_window, database, font_style):
     treeview_frame.pack(side='top', fill='both', expand=True, pady=(10,0))
     
     tree_columns = ('Datum', 'Dijelovi', 'Ukupna Cijena[KM]')
-    
-    tree_style = ttk.Style()
-    tree_style.configure('Treeview.Heading', font=font_style)
-    tree_style.configure('mystyle.Treeview', font=font_style)
     
     tree_jobs = TreeviewTemplate(treeview_frame, tree_columns, tree_style)
     
@@ -346,7 +388,7 @@ def find_customer_window(master_window, parent_window, database, font_style):
                       fields_frame, 
                       database, 
                       font_style, 
-                      name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper())
+                      name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper().replace(' ',''))
     
     #binds and buttons
     #delete selection button
@@ -367,11 +409,11 @@ def find_customer_window(master_window, parent_window, database, font_style):
                                    command=lambda:is_data_entered(name_autocomplete.get_text(), car_autocomplete.get_text(), reg_autocomplete.get_text()))
     add_new_workorder_button.pack(side='top')
     
-    master_window.bind('<Return>', lambda event:autofill_fields(event))
+    master_window.bind('<Return>', lambda event:[autofill_fields()])
     
     
 #ADD CUSTOMER AND CREATE WORK DATA FILE
-def add_customer_window(master_window, parent_window, database, font_style):
+def add_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style):
     
     def add_to_csv():
         if name_entry.get_text() == '' or car_entry.get_text() == '' or reg_entry.get_text() == '':
@@ -396,26 +438,27 @@ def add_customer_window(master_window, parent_window, database, font_style):
         name_reg_nospace = name_entry.get_text().lower().replace(' ', '') + '_' + reg_entry.get_text().upper().replace(' ', '')
         if not os.path.isdir(f'{JOBS_STORAGE_PATH}{name_reg_nospace}'):
             os.mkdir(f'{JOBS_STORAGE_PATH}{name_reg_nospace}\\')
-            # with open(f'{JOBS_STORAGE_PATH}\{name_reg_nospace}\\', 'a', newline='', encoding='utf-8') as file:
-            #     writer = csv.writer(file)
-            #     writer.writerow(['dio', 'marka', 'količina', 'cijena', 'ukupno'])
+
         for slave in parent_window.pack_slaves():
             slave.destroy()
-        find_customer_window(master_window, parent_window, database, font_style)
+
+        for slave in parent_window2.pack_slaves():
+            slave.destroy()
+            
+        find_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style)
         add_customer_frame.destroy()
         
     add_customer_frame = tk.Frame(parent_window)
-    if len(parent_window.pack_slaves()) > 2:
+    if len(parent_window.pack_slaves()) > 1:
         slave_list = parent_window.pack_slaves()
-        slave_list[2].destroy()
+        slave_list[1].destroy()
     add_customer_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    add_customer_frame.pack(side='top', anchor='nw')
+    add_customer_frame.pack(side='right', anchor='ne')
 
     master_window.bind('<Return>', lambda event:add_to_csv())
     
     #Add new user to database
     name_entry = EntryTemplate('Ime i Prezime', add_customer_frame, font_style, ('top', (5,0)), 'top', width=30)
-    name_entry.set_focus()
     car_entry = EntryTemplate('Vozilo', add_customer_frame, font_style, ('top', (5,0)), 'top', width=30)
     reg_entry = EntryTemplate('Registracija', add_customer_frame, font_style, ('top', (5,0)), 'top', width=30)
     
@@ -430,6 +473,11 @@ def main():
     
     def clear_children():
         list_of_slaves = windows_frame.pack_slaves()
+        for frame in list_of_slaves:
+            if '!frame' in str(frame):
+                frame.destroy()
+        
+        list_of_slaves = windows_frame2.pack_slaves()
         for frame in list_of_slaves:
             if '!frame' in str(frame):
                 frame.destroy()
@@ -462,11 +510,20 @@ def main():
     bttn_style = ttk.Style()
     bttn_style.configure('bttn_style.TButton', font=font_style, background=BACKGROUND_COLOR)
     
+    #style for treeview
+    tree_style = ttk.Style()
+    tree_style.configure('Treeview.Heading', font=font_style)
+    tree_style.configure('mystyle.Treeview', font=font_style)
+    
     #search for customers button
     buttons_frame = tk.Frame(master_window)
     buttons_frame.config(background=BACKGROUND_COLOR)
-    buttons_frame.pack(side='top', anchor='nw')
-    
+    buttons_frame.pack(side='top', anchor='ne')
+
+    windows_frame2 = tk.Frame(master_window)
+    windows_frame2.config(background='blue')
+    windows_frame2.pack(side='left', fill='y')
+
     windows_frame = tk.Frame(master_window)
     windows_frame.config(background=BACKGROUND_COLOR)
     windows_frame.pack(side='left', fill='both', expand=True)
@@ -475,13 +532,14 @@ def main():
     #find customer button
     query_customer_button = ttk.Button(buttons_frame, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
                                        command=lambda:[clear_children(), 
-                                                       find_customer_window(master_window, windows_frame, database, font_style)])
-    query_customer_button.pack(side='left')
-    find_customer_window(master_window, windows_frame, database, font_style)
+                                                       find_customer_window(master_window, windows_frame, windows_frame2, database, font_style, tree_style)])
+    query_customer_button.pack(side='right')
+    find_customer_window(master_window, windows_frame, windows_frame2, database, font_style, tree_style)
+    
     #add new customer button
     add_customer_button = ttk.Button(buttons_frame, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
-                                    command=lambda:[add_customer_window(master_window, windows_frame, database, font_style)])
-    add_customer_button.pack(side='left')
+                                    command=lambda:[add_customer_window(master_window, windows_frame, windows_frame2, database, font_style, tree_style)])
+    add_customer_button.pack(side='right')
 
     master_window.bind('<Escape>', lambda event:master_window.destroy())
     master_window.mainloop()
