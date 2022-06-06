@@ -308,6 +308,7 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     
     #fill customer tree
     def fill_from_database():
+        tree_jobs.clear()
         selected = tree_customer_database.treeview.selection()
         selected_list = tree_customer_database.treeview.item(selected[0])['values'][0].split(':')
         
@@ -358,6 +359,7 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     
     with open('data.csv', 'r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
+        customer_database_list = []
         for row in reader:
             tree_customer_database.insert('', f"{row['ime'].replace(' ', '_')}:{row['reg_broj'].replace(' ','_')}", 'None')
     
@@ -447,7 +449,8 @@ def add_customer_window(master_window, parent_window, parent_window2, database, 
             
         find_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style)
         add_customer_frame.destroy()
-        
+    
+    #frame for adding new customers to the database    
     add_customer_frame = tk.Frame(parent_window)
     if len(parent_window.pack_slaves()) > 1:
         slave_list = parent_window.pack_slaves()
