@@ -11,6 +11,10 @@ JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '\jobs\\')
 if not os.path.isdir(JOBS_STORAGE_PATH):
     os.mkdir(JOBS_STORAGE_PATH)
 
+ARCHIVE_PATH = os.path.join(os.path.dirname(__file__) + '\\archive\\')
+if not os.path.isdir(ARCHIVE_PATH):
+    os.mkdir(ARCHIVE_PATH)
+
 BACKGROUND_COLOR = 'gray'
 FOREGROUND_COLOR = 'white'
 #needed global for adding new workorders
@@ -130,7 +134,8 @@ class TreeviewTemplate(object):
         self.treeview.delete(*self.treeview.get_children())
         
     def delete(self):
-        self.treeview.delete(self.treeview.selection())
+        if self.treeview.selection() != ():
+            self.treeview.delete(self.treeview.selection()[0])
         
     def bind_key(self, sequence, function):
         self.treeview.bind(sequence=sequence, func=function)
@@ -216,7 +221,7 @@ def fill_workorder_tree(name, reg, tree):
                     parts.append(row['dio']+',')
                     parts[-1] = parts[-1].strip(',')
                     total_price += int(row['ukupno'])           
-            tree.insert('', [csv_file.replace('.csv', ''), parts, str(total_price)], tag='folder')
+            tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), parts, str(total_price)], tag='folder')
             parts = []
             total_price = 0
 
@@ -230,7 +235,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     child_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     child_frame.grid()
     
-    todays_date = datetime.date.today().strftime('%d.%m.%Y')
+    todays_date = datetime.date.today().strftime('%d_%m_%Y')
     length_of_customer_directory = len(os.listdir(JOBS_STORAGE_PATH + csv_folder))
     date_file_name = f'{todays_date}({length_of_customer_directory}).csv'
     file_path = f'{JOBS_STORAGE_PATH}{csv_folder}\\{date_file_name}'
@@ -306,6 +311,10 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style):
     
+    #delete workorder
+    def delete_workorder():
+        tree_jobs.delete()
+    
     #fill customer tree
     def fill_from_database():
         tree_jobs.clear()
@@ -359,7 +368,6 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     
     with open('data.csv', 'r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
-        customer_database_list = []
         for row in reader:
             tree_customer_database.insert('', f"{row['ime'].replace(' ', '_')}:{row['reg_broj'].replace(' ','_')}", 'None')
     
@@ -393,25 +401,25 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
                       name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper().replace(' ',''))
     
     #binds and buttons
-    #delete selection button
-    buttons_frame_delete = tk.Frame(fields_frame)
-    buttons_frame_delete.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    buttons_frame_delete.pack(side='right', anchor='ne')
-    
-    delete_workorder_button = ttk.Button(buttons_frame_delete, width=20,text='Obriši Predračun', style='bttn_style.TButton', 
-                                   command=lambda:print("add command"))
-    delete_workorder_button.pack(side='top', anchor='nw')
-    
     #add new workorder button
     buttons_frame_add = tk.Frame(fields_frame)
     buttons_frame_add.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    buttons_frame_add.pack(side='left', anchor='nw') 
+    buttons_frame_add.pack(side='right', anchor='nw') 
       
     add_new_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Novi Predračun', style='bttn_style.TButton', 
                                    command=lambda:is_data_entered(name_autocomplete.get_text(), car_autocomplete.get_text(), reg_autocomplete.get_text()))
     add_new_workorder_button.pack(side='top')
     
     master_window.bind('<Return>', lambda event:[autofill_fields()])
+    
+    #delete selection button
+    buttons_frame_delete = tk.Frame(fields_frame)
+    buttons_frame_delete.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    buttons_frame_delete.pack(side='left', anchor='ne')
+    
+    delete_workorder_button = ttk.Button(buttons_frame_delete, width=20,text='Obriši Predračun', style='bttn_style.TButton', 
+                                   command=lambda:delete_workorder())
+    delete_workorder_button.pack(side='top', anchor='nw')
     
     
 #ADD CUSTOMER AND CREATE WORK DATA FILE
