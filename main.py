@@ -141,15 +141,15 @@ class TreeviewTemplate(object):
         if self.treeview.selection() != ():
             #shutil.move()
             file_to_move = f"{customer_folder}\{self.treeview.item(self.treeview.selection()[0])['values'][0].replace('.','_')}.csv"
-            if os.path.isfile(ARCHIVE_PATH + file_to_move):
-                sub = re.findall(r'\((.*)\)', file_to_move)
+            file_for_rename = f"{customer_folder}\{self.treeview.item(self.treeview.selection()[0])['values'][0].replace('.','_')}_0.csv"
+            while os.path.isfile(ARCHIVE_PATH + file_for_rename):
+                #print(file_for_rename)
+                sub = re.findall(r'\)_(.*)\.', file_for_rename)
                 number_of_copy = str(int(sub[0])+1)
-                temp_file_to_move = file_to_move
-                temp_file_to_move = re.sub(r'\((.*)\)', f'({str(sub[0])})_{number_of_copy}', temp_file_to_move)
-                os.rename(JOBS_STORAGE_PATH + file_to_move,JOBS_STORAGE_PATH + temp_file_to_move)
-                shutil.move(JOBS_STORAGE_PATH + temp_file_to_move, ARCHIVE_PATH + temp_file_to_move)
+                file_for_rename = re.sub(r'\)_(.*)\.', f')_{number_of_copy}.', file_for_rename)
             else:
-                shutil.move(JOBS_STORAGE_PATH + file_to_move, ARCHIVE_PATH + file_to_move)
+                os.rename(JOBS_STORAGE_PATH + file_to_move, JOBS_STORAGE_PATH + file_for_rename)
+                shutil.move(JOBS_STORAGE_PATH + file_for_rename, ARCHIVE_PATH + file_for_rename)
             self.treeview.delete(self.treeview.selection()[0])
         
     def bind_key(self, sequence, function):
