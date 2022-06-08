@@ -1,5 +1,7 @@
 import csv
 import os
+import shutil
+import re
 import tkinter as tk
 from tkinter import ttk, messagebox
 import datetime
@@ -105,7 +107,6 @@ class AutocompleteTemplate(object):
     def clear(self):
         self.autocomplete.set('')
     
-
 #base class for treeview widget
 class TreeviewTemplate(object):
     def __init__(self, treeview_frame, columns, style):
@@ -133,8 +134,22 @@ class TreeviewTemplate(object):
     def clear(self):
         self.treeview.delete(*self.treeview.get_children())
         
-    def delete(self):
+    def delete(self, customer_folder):
+        if not os.path.isdir(f"{ARCHIVE_PATH}{customer_folder}"):
+            os.mkdir(f"{ARCHIVE_PATH}{customer_folder}")
+
         if self.treeview.selection() != ():
+            #shutil.move()
+            file_to_move = f"{customer_folder}\{self.treeview.item(self.treeview.selection()[0])['values'][0].replace('.','_')}.csv"
+            if os.path.isfile(ARCHIVE_PATH + file_to_move):
+                sub = re.findall(r'\((.*)\)', file_to_move)
+                number_of_copy = str(int(sub[0])+1)
+                temp_file_to_move = file_to_move
+                temp_file_to_move = re.sub(r'\((.*)\)', f'({str(sub[0])})_{number_of_copy}', temp_file_to_move)
+                os.rename(JOBS_STORAGE_PATH + file_to_move,JOBS_STORAGE_PATH + temp_file_to_move)
+                shutil.move(JOBS_STORAGE_PATH + temp_file_to_move, ARCHIVE_PATH + temp_file_to_move)
+            else:
+                shutil.move(JOBS_STORAGE_PATH + file_to_move, ARCHIVE_PATH + file_to_move)
             self.treeview.delete(self.treeview.selection()[0])
         
     def bind_key(self, sequence, function):
@@ -307,13 +322,12 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     main_frame.bind('<Escape>', lambda event:main_frame.destroy())
     main_frame.protocol('WM_DELETE_WINDOW', set_counter_to_zero)
 
-
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style):
     
     #delete workorder
     def delete_workorder():
-        tree_jobs.delete()
+        tree_jobs.delete(f"{name_autocomplete.get_text().lower().replace(' ', '')}_{reg_autocomplete.get_text().upper().replace(' ','')}")
     
     #fill customer tree
     def fill_from_database():
@@ -421,7 +435,6 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
                                    command=lambda:delete_workorder())
     delete_workorder_button.pack(side='top', anchor='nw')
     
-    
 #ADD CUSTOMER AND CREATE WORK DATA FILE
 def add_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style):
     
@@ -475,7 +488,6 @@ def add_customer_window(master_window, parent_window, parent_window2, database, 
     
     confirm_button = ttk.Button(add_customer_frame, text='Unos u Bazu', width=20, style='bttn_style.TButton', command=add_to_csv)
     confirm_button.pack(side='top', pady=(5, 5))
-
 
 def main():
     #store data from csv in cache for use
