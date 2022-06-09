@@ -156,6 +156,9 @@ class TreeviewTemplate(object):
         self.treeview.bind(sequence=sequence, func=function)
         
     def return_selection(self):
+        if not self.treeview.selection():
+            messagebox.showerror('Upozorenje!', 'Niste označili predračun!')
+            return None
         return self.treeview.item(self.treeview.selection()[0])
 
 #base class for adding new workorder frame widgets
@@ -244,9 +247,24 @@ def fill_workorder_tree(name, reg, tree):
             total_price = 0
 
 #new window tree fill from selected csv with hands price entry, button to convert to PDF
-def workorder_for_printing(master_window, font_style, tree_style, selected_item):
-    pass
-
+def workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name):
+    if not selected_file:
+        return None
+    file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
+    file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
+    
+    printing_frame = tk.Toplevel(parent_window)
+    printing_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    
+    estimate_columns = ('Dio', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
+    
+    estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
+    
+    with open(file_location, 'r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            estimate_tree.insert('',list(row.values()),tag='estimate')
+            
 #add work order, create csv for workorder       
 def new_workorder(master_window, parent_window, database, font_style, csv_folder):
     
@@ -409,6 +427,8 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     tree_columns = ('Datum', 'Dijelovi', 'Ukupna Cijena[KM]')
     
     tree_jobs = TreeviewTemplate(treeview_frame, tree_columns, tree_style)
+    tree_jobs.bind_key('<Double-Button-1>', lambda event:workorder_for_printing(parent_window, font_style, tree_style, 
+                                        tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}'))
     
     #check if data is entered in customer query
     def is_data_entered(name, car, reg):
@@ -428,7 +448,8 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     buttons_frame_add.pack(side='right', anchor='nw') 
     
     open_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Otvori Predračun', style='bttn_style.TButton',
-                                       command=lambda:workorder_for_printing(master_window, font_style, tree_style, tree_jobs.return_selection()))
+                                       command=lambda:workorder_for_printing(parent_window, font_style, tree_style, 
+                                        tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}'))
     open_workorder_button.pack(side='right')
     
     add_new_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Novi Predračun', style='bttn_style.TButton', 
