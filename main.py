@@ -154,6 +154,9 @@ class TreeviewTemplate(object):
         
     def bind_key(self, sequence, function):
         self.treeview.bind(sequence=sequence, func=function)
+        
+    def return_selection(self):
+        return self.treeview.item(self.treeview.selection()[0])
 
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
@@ -239,6 +242,10 @@ def fill_workorder_tree(name, reg, tree):
             tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), parts, str(total_price)], tag='folder')
             parts = []
             total_price = 0
+
+#new window tree fill from selected csv with hands price entry, button to convert to PDF
+def workorder_for_printing(master_window, font_style, tree_style, selected_item):
+    pass
 
 #add work order, create csv for workorder       
 def new_workorder(master_window, parent_window, database, font_style, csv_folder):
@@ -419,10 +426,14 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     buttons_frame_add = tk.Frame(fields_frame)
     buttons_frame_add.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     buttons_frame_add.pack(side='right', anchor='nw') 
-      
+    
+    open_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Otvori Predračun', style='bttn_style.TButton',
+                                       command=lambda:workorder_for_printing(master_window, font_style, tree_style, tree_jobs.return_selection()))
+    open_workorder_button.pack(side='right')
+    
     add_new_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Novi Predračun', style='bttn_style.TButton', 
                                    command=lambda:is_data_entered(name_autocomplete.get_text(), car_autocomplete.get_text(), reg_autocomplete.get_text()))
-    add_new_workorder_button.pack(side='top')
+    add_new_workorder_button.pack(side='right')
     
     master_window.bind('<Return>', lambda event:[autofill_fields()])
     
@@ -540,7 +551,7 @@ def main():
     
     #search for customers button
     buttons_frame = tk.Frame(master_window)
-    buttons_frame.config(background=BACKGROUND_COLOR)
+    buttons_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     buttons_frame.pack(side='top', anchor='ne')
 
     windows_frame2 = tk.Frame(master_window)
