@@ -257,7 +257,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
         return None
     
     def edit_selection(selection):
-        selection_for_edit = WorkorderRowTemplate(treeview_frame, font_style, 0)
+        if len(button_frame.winfo_children()) < 3:
+            selection_frame = tk.Frame(button_frame)
+            selection_frame.pack(side='bottom')
+            selection_for_edit = WorkorderRowTemplate(selection_frame, font_style, 0)
+        
+        #to do get values, modify csv,
     
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
     file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
@@ -265,7 +270,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     printing_frame = tk.Toplevel(parent_window)
     printing_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
 
-    treeview_frame = tk.Frame(printing_frame)
+    treeview_frame = tk.Frame(parent_window)
     treeview_frame.pack(side='top')
     
     button_frame = tk.Frame(printing_frame)
@@ -283,9 +288,11 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     estimate_columns = ('Dio', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
+    estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
+    
     
     edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton', 
-                             command=lambda event:edit_selection(estimate_tree.return_selection()))
+                             command=lambda:edit_selection(estimate_tree.return_selection()))
     edit_button.pack(side='left', anchor='sw')
     
     
@@ -383,6 +390,11 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style):
     
+    #call print window
+    # def dummy_print():
+    #     workorder_for_printing(parent_window, font_style, tree_style, 
+    #                                     tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}')
+    
     #delete workorder
     def delete_workorder():
         tree_jobs.delete(f"{name_autocomplete.get_text().lower().replace(' ', '')}_{reg_autocomplete.get_text().upper().replace(' ','')}")
@@ -462,8 +474,12 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     tree_columns = ('Datum', 'Dijelovi', 'Ukupna Cijena[KM]')
     
     tree_jobs = TreeviewTemplate(treeview_frame, tree_columns, tree_style)
-    tree_jobs.bind_key('<Double-Button-1>', lambda event:workorder_for_printing(parent_window, font_style, tree_style, 
-                                        tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}'))
+    tree_jobs.bind_key('<Double-Button-1>', 
+                       lambda event:workorder_for_printing(parent_window, 
+                                                           font_style, 
+                                                           tree_style,
+                                                           tree_jobs.return_selection(), 
+                                                           f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}'))
     
     #check if data is entered in customer query
     def is_data_entered(name, car, reg):
