@@ -85,6 +85,8 @@ class EntryTemplate(object):
         else:
             self.add_text.config(state='readonly')
 
+    def delete(self):
+        self.add_text.delete(0, 'end')
 #base class for autocomplete entry widget
 class AutocompleteTemplate(object):
     def __init__(self, label_name, frame, font_style, database) -> None:
@@ -240,8 +242,8 @@ def fill_workorder_tree(name, reg, tree):
                 reader = csv.DictReader(file)
                 for row in reader:
                     parts.append(row['dio']+',')
-                    parts[-1] = parts[-1].strip(',')
-                    total_price += int(row['ukupno'])           
+                    total_price += int(row['ukupno'])  
+                parts[-1] = parts[-1][:-1]         
             tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), parts, str(total_price)], tag='folder')
             parts = []
             total_price = 0
@@ -255,11 +257,33 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     
     printing_frame = tk.Toplevel(parent_window)
     printing_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+
+    treeview_frame = tk.Frame(printing_frame)
+    treeview_frame.pack(side='top')
+    
+    button_frame = tk.Frame(printing_frame)
+    button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    button_frame.pack(side='bottom', fill='both', expand=True)
+    
+    edit_button_frame = tk.Frame(button_frame)
+    edit_button_frame.config(background=BACKGROUND_COLOR)
+    edit_button_frame.pack(side='left', fill='both', expand=True)
+    
+    print_button_frame = tk.Frame(button_frame)
+    print_button_frame.config(background=BACKGROUND_COLOR)
+    print_button_frame.pack(side='left', fill='both', expand=True)
     
     estimate_columns = ('Dio', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
     
+    edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton')
+    edit_button.pack(side='left', anchor='sw')
+    
+    print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton')
+    print_button.pack(side='right', anchor='se')
+
+
     with open(file_location, 'r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         for row in reader:
@@ -377,9 +401,9 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
         car = car_autocomplete.get_text()
         reg = reg_autocomplete.get_text()
         
-        name_autocomplete.clear()
-        car_autocomplete.clear()
-        reg_autocomplete.clear()
+        name_autocomplete.delete()
+        car_autocomplete.delete()
+        reg_autocomplete.delete()
 
         if name != '':
             customer = next(item for item in database.customer_data if item['ime'] == name.title())
@@ -415,9 +439,11 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     fields_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     fields_frame.pack(side='left', expand=True, fill='both')
     
-    name_autocomplete = AutocompleteTemplate('Ime i Prezime', fields_frame, font_style, database.name_auto_complete)
-    car_autocomplete = AutocompleteTemplate('Vozilo', fields_frame, font_style, None)
-    reg_autocomplete = AutocompleteTemplate('Registracija', fields_frame, font_style, database.reg_auto_complete)
+    name_autocomplete = EntryTemplate('Ime i Prezime', fields_frame, font_style, ('top', (5,0)), 'top', width=30)
+    car_autocomplete = EntryTemplate('Vozilo', fields_frame, font_style, ('top', (5,0)), 'top', width=30)
+    reg_autocomplete = EntryTemplate('Registracija', fields_frame, font_style, ('top', (5,0)), 'top', width=30)
+    
+    #('Ime i Prezime', add_customer_frame, font_style, ('top', (5,0)), 'top', width=30)
     
     #Repair list, treeview, scrollbar
     treeview_frame = tk.Frame(fields_frame)
@@ -540,7 +566,7 @@ def main():
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
-    master_window.attributes('-fullscreen', False)
+    master_window.attributes('-fullscreen', True)
     master_window.config(background=BACKGROUND_COLOR)
     
     #create tiled background image from selected photo
@@ -563,11 +589,13 @@ def main():
     
     #button style for the application
     bttn_style = ttk.Style()
-    bttn_style.configure('bttn_style.TButton', font=font_style, background=BACKGROUND_COLOR)
+    bttn_style.theme_use('default')
+    bttn_style.configure('bttn_style.TButton', font=font_style, background='Light Gray')
     
     #style for treeview
     tree_style = ttk.Style()
-    tree_style.configure('Treeview.Heading', font=font_style)
+    tree_style.theme_use('default')
+    tree_style.configure('Treeview.Heading', font=font_style, background='Light Gray')
     tree_style.configure('mystyle.Treeview', font=font_style)
     
     #search for customers button
