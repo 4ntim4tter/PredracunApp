@@ -215,7 +215,10 @@ class WorkorderRowTemplate(object):
                     self.total_entry.get_text()]
         else:
             return None
-                  
+    
+    def fill_cells_from_data(self, selection):
+        print(selection)
+                
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
     with open('data.csv', 'w', newline='', encoding='utf-8') as file:
@@ -252,6 +255,10 @@ def fill_workorder_tree(name, reg, tree):
 def workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name):
     if not selected_file:
         return None
+    
+    def edit_selection(selection):
+        selection_for_edit = WorkorderRowTemplate(treeview_frame, font_style, 0)
+    
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
     file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
     
@@ -277,8 +284,10 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
     
-    edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton')
+    edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton', 
+                             command=lambda event:edit_selection(estimate_tree.return_selection()))
     edit_button.pack(side='left', anchor='sw')
+    
     
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton')
     print_button.pack(side='right', anchor='se')
@@ -474,7 +483,7 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     buttons_frame_add.pack(side='right', anchor='nw') 
     
     open_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Otvori Predračun', style='bttn_style.TButton',
-                                       command=lambda:workorder_for_printing(parent_window, font_style, tree_style, 
+                                       command=lambda event:workorder_for_printing(parent_window, font_style, tree_style, 
                                         tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}'))
     open_workorder_button.pack(side='right')
     
@@ -566,7 +575,7 @@ def main():
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
-    master_window.attributes('-fullscreen', True)
+    master_window.attributes('-fullscreen', False)
     master_window.config(background=BACKGROUND_COLOR)
     
     #create tiled background image from selected photo
