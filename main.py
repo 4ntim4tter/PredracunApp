@@ -156,7 +156,7 @@ class TreeviewTemplate(object):
         
     def bind_key(self, sequence, function):
         self.treeview.bind(sequence=sequence, func=function)
-        
+    
     def return_selection(self):
         if not self.treeview.selection():
             messagebox.showerror('Upozorenje!', 'Niste označili predračun!')
@@ -216,8 +216,12 @@ class WorkorderRowTemplate(object):
         else:
             return None
     
-    def fill_cells_from_data(self, selection):
-        print(selection)
+    def insert_values(self, selection):
+        self.part_entry.set_text(selection['values'][0])
+        self.brand_entry.set_text(selection['values'][1])
+        self.price_entry.set_text(selection['values'][2])
+        self.amount_entry.set_text(selection['values'][3])
+        self.calculate_total()
                 
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
@@ -257,12 +261,27 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
         return None
     
     def edit_selection(selection):
+        if len(button_frame.winfo_children()) > 3:
+            button_frame.winfo_children()[-1].destroy()
+            button_frame.winfo_children()[-1].destroy()
+            button_frame.winfo_children()[-1].destroy()
+            
         if len(button_frame.winfo_children()) < 3:
             selection_frame = tk.Frame(button_frame)
             selection_frame.pack(side='bottom')
+            
+            mod_button_frame = tk.Frame(button_frame)
+            mod_button_frame.pack(side='bottom')
+            
             selection_for_edit = WorkorderRowTemplate(selection_frame, font_style, 0)
-        
-        #to do get values, modify csv,
+            selection_for_edit.total_frame.pack_forget()
+            selection_for_edit.insert_values(selection)
+            
+            modify_button = ttk.Button(button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', command=lambda:pass)
+            modify_button.pack(side='right')
+            
+            #TODO MUST CREATE MODIFICATION IN TREEVIEW
+            
     
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
     file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
@@ -279,7 +298,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     
     edit_button_frame = tk.Frame(button_frame)
     edit_button_frame.config(background=BACKGROUND_COLOR)
-    edit_button_frame.pack(side='left', fill='both', expand=True)
+    edit_button_frame.pack(side='left', fill='both')
     
     print_button_frame = tk.Frame(button_frame)
     print_button_frame.config(background=BACKGROUND_COLOR)
@@ -292,12 +311,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     
     
     edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton', 
-                             command=lambda:edit_selection(estimate_tree.return_selection()))
+                             command=lambda:[edit_selection(estimate_tree.return_selection())])
     edit_button.pack(side='left', anchor='sw')
     
     
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton')
-    print_button.pack(side='right', anchor='se')
+    print_button.pack(side='left', anchor='sw')
 
 
     with open(file_location, 'r', encoding='utf-8') as file:
@@ -315,11 +334,13 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     child_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     child_frame.grid()
     
+    #necessary file paths and variables
     todays_date = datetime.date.today().strftime('%d_%m_%Y')
     length_of_customer_directory = len(os.listdir(JOBS_STORAGE_PATH + csv_folder))
     date_file_name = f'{todays_date}({length_of_customer_directory}).csv'
     file_path = f'{JOBS_STORAGE_PATH}{csv_folder}\\{date_file_name}'
     
+    #first entry form when window is called
     entry_list = []
     global ENTRY_COUNTER
     first_entry = WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER)
