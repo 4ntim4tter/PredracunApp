@@ -115,6 +115,7 @@ class TreeviewTemplate(object):
         self.treeview_frame = treeview_frame
         self.columns = columns
         self.style = style
+        self.previous_bind = None
         
         self.treeview = ttk.Treeview(treeview_frame, columns=columns, show='headings', style='mystyle.Treeview')
         self.treeview.config()
@@ -155,8 +156,14 @@ class TreeviewTemplate(object):
             self.treeview.delete(self.treeview.selection()[0])
         
     def bind_key(self, sequence, function):
-        self.treeview.bind(sequence=sequence, func=function)
+        self.previous_bind = self.treeview.bind(sequence=sequence, func=function)
+
+    def previous_bind_get(self):
+        return self.previous_bind
     
+    def remove_current_bind(self, string):
+        self.treeview.unbind(string)
+        
     def return_selection(self):
         if not self.treeview.selection():
             messagebox.showerror('Upozorenje!', 'Niste označili predračun!')
@@ -260,25 +267,31 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     if not selected_file:
         return None
     
+    def modify_csv_entry(selection):
+        with open(file_location, 'w+', encoding='utf-8') as mod_file:
+            mod_reader = csv.DictReader(mod_file)
+            for row in mod_reader:
+                print(row)
+    
     def edit_selection(selection):
         if len(button_frame.winfo_children()) > 3:
-            button_frame.winfo_children()[-1].destroy()
-            button_frame.winfo_children()[-1].destroy()
-            button_frame.winfo_children()[-1].destroy()
+            print(button_frame.winfo_children()[-1].destroy())
+            print(button_frame.winfo_children()[-1].destroy())
+            print(button_frame.winfo_children()[-1].destroy())
             
         if len(button_frame.winfo_children()) < 3:
             selection_frame = tk.Frame(button_frame)
-            selection_frame.pack(side='bottom')
+            selection_frame.pack(side='left')
             
             mod_button_frame = tk.Frame(button_frame)
             mod_button_frame.pack(side='bottom')
             
             selection_for_edit = WorkorderRowTemplate(selection_frame, font_style, 0)
-            selection_for_edit.total_frame.pack_forget()
+            selection_for_edit.total_frame.grid_forget()
             selection_for_edit.insert_values(selection)
             
-            modify_button = ttk.Button(button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', command=lambda:pass)
-            modify_button.pack(side='right')
+            modify_button = ttk.Button(mod_button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', command=lambda:modify_csv_entry(selected_file))
+            modify_button.pack(side='bottom', anchor='se')
             
             #TODO MUST CREATE MODIFICATION IN TREEVIEW
             
@@ -307,8 +320,9 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     estimate_columns = ('Dio', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
-    estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
-    
+    # estimate_tree.remove_current_bind('<Double-Button-1>')
+    # estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
+    # FIX THIS
     
     edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton', 
                              command=lambda:[edit_selection(estimate_tree.return_selection())])
