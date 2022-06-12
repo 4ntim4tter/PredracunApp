@@ -253,10 +253,11 @@ def fill_workorder_tree(name, reg, tree):
         total_price = 0
         for csv_file in directory_contents:
             with open(f'{JOBS_STORAGE_PATH}{csv_file_path}\\{csv_file}', 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
+                reader = csv.DictReader(file)           
                 for row in reader:
-                    parts.append(row['dio']+',')
-                    total_price += int(row['ukupno'])  
+                    if row != '':
+                        parts.append(row['dio']+',')
+                        total_price += int(row['ukupno'])  
                 parts[-1] = parts[-1][:-1]         
             tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), parts, str(total_price)], tag='folder')
             parts = []
@@ -268,17 +269,13 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
         return None
     
     def modify_csv_entry(selection):
-        with open(file_location, 'w+', encoding='utf-8') as mod_file:
+        with open(file_location, 'r', encoding='utf-8') as mod_file:
             mod_reader = csv.DictReader(mod_file)
             for row in mod_reader:
                 print(row)
     
     def edit_selection(selection):
-        if len(button_frame.winfo_children()) > 3:
-            print(button_frame.winfo_children()[-1].destroy())
-            print(button_frame.winfo_children()[-1].destroy())
-            print(button_frame.winfo_children()[-1].destroy())
-            
+        print(button_frame.winfo_children())
         if len(button_frame.winfo_children()) < 3:
             selection_frame = tk.Frame(button_frame)
             selection_frame.pack(side='left')
@@ -292,8 +289,6 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             
             modify_button = ttk.Button(mod_button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', command=lambda:modify_csv_entry(selected_file))
             modify_button.pack(side='bottom', anchor='se')
-            
-            #TODO MUST CREATE MODIFICATION IN TREEVIEW
             
     
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
@@ -320,9 +315,8 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     estimate_columns = ('Dio', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
-    # estimate_tree.remove_current_bind('<Double-Button-1>')
-    # estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
-    # FIX THIS
+    estimate_tree.remove_current_bind('<Double-Button-1>')
+    estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
     
     edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton', 
                              command=lambda:[edit_selection(estimate_tree.return_selection())])
@@ -438,17 +432,18 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     def fill_from_database():
         tree_jobs.clear()
         selected = tree_customer_database.treeview.selection()
-        selected_list = tree_customer_database.treeview.item(selected[0])['values'][0].split(':')
+        if selected != ():
+            selected_list = tree_customer_database.treeview.item(selected[0])['values'][0].split(':')
         
-        with open('data.csv', 'r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                if row['ime'] == selected_list[0].replace('_', ' ') and row['reg_broj'] == selected_list[1].replace('_', ' '):
-                    name_autocomplete.set_text(row['ime'])
-                    car_autocomplete.set_text(row['vozilo'])
-                    reg_autocomplete.set_text(row['reg_broj'])
-                    
-                    fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
+            with open('data.csv', 'r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    if row['ime'] == selected_list[0].replace('_', ' ') and row['reg_broj'] == selected_list[1].replace('_', ' '):
+                        name_autocomplete.set_text(row['ime'])
+                        car_autocomplete.set_text(row['vozilo'])
+                        reg_autocomplete.set_text(row['reg_broj'])
+                        
+                        fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
             
     #fill query fields
     def autofill_fields():
@@ -534,7 +529,7 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     buttons_frame_add.pack(side='right', anchor='nw') 
     
     open_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Otvori Predračun', style='bttn_style.TButton',
-                                       command=lambda event:workorder_for_printing(parent_window, font_style, tree_style, 
+                                       command=lambda:workorder_for_printing(parent_window, font_style, tree_style, 
                                         tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}'))
     open_workorder_button.pack(side='right')
     
