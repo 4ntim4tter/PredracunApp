@@ -166,16 +166,18 @@ class TreeviewTemplate(object):
         
     def return_selection(self):
         if not self.treeview.selection():
-            messagebox.showerror('Upozorenje!', 'Niste označili predračun!')
+            messagebox.showerror('Upozorenje!', 'Niste označili polje!')
             return None
-        return self.treeview.item(self.treeview.selection()[0])
+        else:
+            return self.treeview.item(self.treeview.selection()[0])
 
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
-    def __init__(self, main_frame, font_style, row):
+    def __init__(self, main_frame, font_style, row, width):
         self.main_frame = main_frame
         self.font_style = font_style
         self.row = row
+        self.width = width
         
         self.part_frame = tk.Frame(self.main_frame)
         self.part_frame.config(background=BACKGROUND_COLOR)
@@ -197,11 +199,11 @@ class WorkorderRowTemplate(object):
         self.total_frame.config(background=BACKGROUND_COLOR)
         self.total_frame.grid(row=self.row, column=5)
         
-        self.part_entry = EntryTemplate('Dio', self.part_frame, font_style, ('top', (5,0)), 'left', width=20)
-        self.brand_entry = EntryTemplate('Marka', self.brand_frame, font_style, ('top', (5,0)), 'left', width=20)
-        self.price_entry = EntryTemplate('Cijena', self.price_frame, font_style, ('top', (5,0)), 'left', width=20)
-        self.amount_entry = EntryTemplate('Količina', self.amount_frame, font_style, ('top', (5,0)), 'left', width=20)
-        self.total_entry = EntryTemplate('Ukupno', self.total_frame, font_style, ('top', (5,0)), 'left', width=20)
+        self.part_entry = EntryTemplate('Dio', self.part_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.brand_entry = EntryTemplate('Marka', self.brand_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.price_entry = EntryTemplate('Cijena', self.price_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.amount_entry = EntryTemplate('Količina', self.amount_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.total_entry = EntryTemplate('Ukupno', self.total_frame, font_style, ('top', (5,0)), 'left', width=self.width)
         self.total_entry.set_state(False)
     
     def calculate_total(self):
@@ -268,6 +270,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     if not selected_file:
         return None
     
+    #if len(parent_window.winfo_children()) > 1:
+    for child in parent_window.winfo_children():
+        if child.winfo_class() == 'Toplevel':
+            child.destroy()
+        
+        
     def modify_csv_entry(selection):
         with open(file_location, 'r', encoding='utf-8') as mod_file:
             mod_reader = csv.DictReader(mod_file)
@@ -275,7 +283,8 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
                 print(row)
     
     def edit_selection(selection):
-        print(button_frame.winfo_children())
+        if selection is None:
+            return None
         if len(button_frame.winfo_children()) < 3:
             selection_frame = tk.Frame(button_frame)
             selection_frame.pack(side='left')
@@ -283,7 +292,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             mod_button_frame = tk.Frame(button_frame)
             mod_button_frame.pack(side='bottom')
             
-            selection_for_edit = WorkorderRowTemplate(selection_frame, font_style, 0)
+            selection_for_edit = WorkorderRowTemplate(selection_frame, font_style, 0, 10)
             selection_for_edit.total_frame.grid_forget()
             selection_for_edit.insert_values(selection)
             
@@ -294,23 +303,25 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
     file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
     
+    
     printing_frame = tk.Toplevel(parent_window)
+    printing_frame.geometry('+5+5')
     printing_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-
+    
     treeview_frame = tk.Frame(parent_window)
     treeview_frame.pack(side='top')
     
     button_frame = tk.Frame(printing_frame)
     button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
-    button_frame.pack(side='bottom', fill='both', expand=True)
+    button_frame.pack(side='bottom', fill='x')
     
     edit_button_frame = tk.Frame(button_frame)
     edit_button_frame.config(background=BACKGROUND_COLOR)
-    edit_button_frame.pack(side='left', fill='both')
+    edit_button_frame.pack(side='left', fill='x')
     
     print_button_frame = tk.Frame(button_frame)
     print_button_frame.config(background=BACKGROUND_COLOR)
-    print_button_frame.pack(side='left', fill='both', expand=True)
+    print_button_frame.pack(side='left', fill='x')
     
     estimate_columns = ('Dio', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
     
@@ -351,7 +362,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     #first entry form when window is called
     entry_list = []
     global ENTRY_COUNTER
-    first_entry = WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER)
+    first_entry = WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER, 20)
     entry_list.append(first_entry)
 
     #increment global counter for adding new forms
@@ -362,7 +373,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     #create new part form
     add_new_entry_button = ttk.Button(child_frame, width=3, text='+', style='bttn_style.TButton', 
                                     command=lambda:[increment_counter(), 
-                                                    entry_list.append(WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER)), 
+                                                    entry_list.append(WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER, 20)), 
                                                     main_frame.update(),
                                                     insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se'),
                                                     cancel_button_frame.grid(row=ENTRY_COUNTER+1, column=4, sticky='se')])
@@ -418,11 +429,6 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
 
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style):
-    
-    #call print window
-    # def dummy_print():
-    #     workorder_for_printing(parent_window, font_style, tree_style, 
-    #                                     tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}')
     
     #delete workorder
     def delete_workorder():
