@@ -380,6 +380,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     child_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     child_frame.grid()
     
+    #FIX CSV CREATION NAME LOGIC
     #necessary file paths and variables
     todays_date = datetime.date.today().strftime('%d_%m_%Y')
     length_of_customer_directory = len(os.listdir(JOBS_STORAGE_PATH + csv_folder))
