@@ -87,6 +87,7 @@ class EntryTemplate(object):
 
     def delete(self):
         self.add_text.delete(0, 'end')
+
 #base class for autocomplete entry widget
 class AutocompleteTemplate(object):
     def __init__(self, label_name, frame, font_style, database) -> None:
@@ -276,11 +277,24 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             child.destroy()
         
         
-    def modify_csv_entry(selection):
+    def modify_csv_entry(selection_estimate, edited_values):
+        turned_to_string = []
+        for item in selection_estimate['values']:
+            turned_to_string.append(str(item))
+            
         with open(file_location, 'r', encoding='utf-8') as mod_file:
-            mod_reader = csv.DictReader(mod_file)
-            for row in mod_reader:
-                print(row)
+            mod_reader = csv.reader(mod_file)
+            file_holder = []
+            for row in list(mod_reader)[1:]:
+                if turned_to_string == row:
+                    file_holder.append(edited_values)
+                else:
+                    file_holder.append(row)
+        with open(file_location, 'w', newline='', encoding='utf-8') as edited_file:
+            edit_writer = csv.writer(edited_file)
+            edit_writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
+            for row in file_holder:
+                edit_writer.writerow(row)
     
     def edit_selection(selection):
         if selection is None:
@@ -296,7 +310,9 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             selection_for_edit.total_frame.grid_forget()
             selection_for_edit.insert_values(selection)
             
-            modify_button = ttk.Button(mod_button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', command=lambda:modify_csv_entry(selected_file))
+            modify_button = ttk.Button(mod_button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', 
+                                       command=lambda:[modify_csv_entry(estimate_tree.return_selection(), selection_for_edit.get_all_values()), printing_frame.destroy(),
+                                                       workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name)])
             modify_button.pack(side='bottom', anchor='se')
             
     
