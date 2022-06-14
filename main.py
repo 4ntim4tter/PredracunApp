@@ -2,11 +2,11 @@ import csv
 import os
 import shutil
 import re
+import decimal
 import tkinter as tk
 from tkinter import ttk, messagebox
 import datetime
 import tkinter.font as tkFont
-from ttkwidgets import autocomplete
 
 #check if /jobs/ data directory exists, create new if not
 JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '\jobs\\')
@@ -88,27 +88,27 @@ class EntryTemplate(object):
     def delete(self):
         self.add_text.delete(0, 'end')
 
-#base class for autocomplete entry widget
-class AutocompleteTemplate(object):
-    def __init__(self, label_name, frame, font_style, database) -> None:
-        self.label_name = label_name
-        self.frame = frame
-        self.font_style = font_style
-        self.database = database
+#base class for autocomplete entry widget // UNUSED
+# class AutocompleteTemplate(object):
+#     def __init__(self, label_name, frame, font_style, database) -> None:
+#         self.label_name = label_name
+#         self.frame = frame
+#         self.font_style = font_style
+#         self.database = database
         
-        ttk.Label(self.frame, font=self.font_style, text=self.label_name, background=BACKGROUND_COLOR).pack(side='top')
-        self.autocomplete = autocomplete.AutocompleteCombobox(self.frame, width=30, completevalues=self.database, font=self.font_style, justify='center')
-        self.autocomplete.option_add('*Tcombobox*Listbox.Justify', 'center')
-        self.autocomplete.pack(side='top', pady=(5,0))
+#         ttk.Label(self.frame, font=self.font_style, text=self.label_name, background=BACKGROUND_COLOR).pack(side='top')
+#         self.autocomplete = autocomplete.AutocompleteCombobox(self.frame, width=30, completevalues=self.database, font=self.font_style, justify='center')
+#         self.autocomplete.option_add('*Tcombobox*Listbox.Justify', 'center')
+#         self.autocomplete.pack(side='top', pady=(5,0))
         
-    def get_text(self):
-        return self.autocomplete.get()
+#     def get_text(self):
+#         return self.autocomplete.get()
     
-    def set_text(self, text:str):
-        return self.autocomplete.set(text)
+#     def set_text(self, text:str):
+#         return self.autocomplete.set(text)
     
-    def clear(self):
-        self.autocomplete.set('')
+#     def clear(self):
+#         self.autocomplete.set('')
     
 #base class for treeview widget
 class TreeviewTemplate(object):
@@ -209,20 +209,28 @@ class WorkorderRowTemplate(object):
     
     def calculate_total(self):
         if self.price_entry.get_text() != '' and self.amount_entry.get_text() != '':
-            total = self.price_entry.get_text() + '*' + self.amount_entry.get_text()
-            total = round(eval(total), 2)
-            self.total_entry.set_state(True)
-            self.total_entry.set_text(str(total))
-            self.total_entry.set_state(False)
-    
+            if self.price_entry.get_text().replace('.','').isdigit() and self.amount_entry.get_text().replace('.','').isdigit():
+                total = self.price_entry.get_text() + '*' + self.amount_entry.get_text()
+                total = round(eval(total), 2)
+                self.total_entry.set_state(True)
+                self.total_entry.set_text(str(total))
+                self.total_entry.set_state(False)
+                return True
+            else:
+                return False
+
     def get_all_values(self):
         if self.part_entry.get_text() != '' or self.brand_entry.get_text() != '' or self.price_entry.get_text() != '' or self.amount_entry.get_text() != '':
-            self.calculate_total()
-            return [self.part_entry.get_text().strip().title(), 
-                    self.brand_entry.get_text().strip().title(), 
-                    self.price_entry.get_text(), 
-                    self.amount_entry.get_text(), 
-                    self.total_entry.get_text()]
+            checker = self.calculate_total()          
+            if checker:    
+                return [self.part_entry.get_text().strip().title(), 
+                        self.brand_entry.get_text().strip().title(), 
+                        self.price_entry.get_text(), 
+                        self.amount_entry.get_text(), 
+                        self.total_entry.get_text()]
+            else:
+                messagebox.showerror("Upozorenje!", f"U polja \"Cijena\" i \"Količina\" možete unijeti samo brojeve!", parent=self.main_frame)
+                return None
         else:
             return None
     
@@ -260,7 +268,7 @@ def fill_workorder_tree(name, reg, tree):
                 for row in reader:
                     if row != '':
                         parts.append(row['dio']+',')
-                        total_price += int(row['ukupno'])  
+                        total_price += (decimal.Decimal(row['ukupno']))  
                 parts[-1] = parts[-1][:-1]         
             tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), parts, str(total_price)], tag='folder')
             parts = []
@@ -278,6 +286,9 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
         
         
     def modify_csv_entry(selection_estimate, edited_values):
+        if edited_values is None:
+            return None
+        
         turned_to_string = []
         for item in selection_estimate['values']:
             turned_to_string.append(str(item))
@@ -398,6 +409,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     #calculate totals of price and amount fileds
     def calculate_totals(list_of_workorders):
         for entry in list_of_workorders:
+            print('im here in calc totals')
             entry.calculate_total()
     
     #modify global counter variable
@@ -415,7 +427,20 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
                 for row in list_of_workorders:
                     if row.get_all_values() is not None:
                         writer.writerow(row.get_all_values())
+        else:
+            messagebox.showwarning("Upozorenje.", "Predračun već postoji.", parent=main_frame)
+            return None
 
+    def make_new_workorder():
+        for item in entry_list:
+            if item.get_all_values() is None:
+                messagebox.showerror("Upozorenje.", "Potrebna polja nisu popunjena.", parent=main_frame)
+                return None
+        populate_csv(entry_list)
+        parent_window.focus_set()
+        parent_window.event_generate('<Return>') 
+        set_counter_to_zero()
+        main_frame.destroy()
     
     #button to create and populate a new CSV file
     insert_button_frame = tk.Frame(child_frame)
@@ -423,7 +448,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se', pady=(3, 0))
     
     insert_contents_button = ttk.Button(insert_button_frame, text="Otvori novi predračun", width=19, style='bttn_style.TButton', 
-                                 command=lambda:[populate_csv(entry_list), parent_window.focus_set(), parent_window.event_generate('<Return>'),  set_counter_to_zero(),main_frame.destroy()])
+                                 command=lambda:[make_new_workorder()])
     insert_contents_button.grid()
     
     
@@ -515,8 +540,6 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     name_autocomplete = EntryTemplate('Ime i Prezime', fields_frame, font_style, ('top', (5,0)), 'top', width=30)
     car_autocomplete = EntryTemplate('Vozilo', fields_frame, font_style, ('top', (5,0)), 'top', width=30)
     reg_autocomplete = EntryTemplate('Registracija', fields_frame, font_style, ('top', (5,0)), 'top', width=30)
-    
-    #('Ime i Prezime', add_customer_frame, font_style, ('top', (5,0)), 'top', width=30)
     
     #Repair list, treeview, scrollbar
     treeview_frame = tk.Frame(fields_frame)
