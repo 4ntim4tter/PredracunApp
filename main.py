@@ -172,6 +172,12 @@ class TreeviewTemplate(object):
         else:
             return self.treeview.item(self.treeview.selection()[0])
 
+    def get_selected_row_number(self):
+        if not self.treeview.selection():
+            messagebox.showerror('Upozorenje!', 'Niste označili polje!')
+            return None
+        return self.treeview.index(self.treeview.selection()[0])
+
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
     def __init__(self, main_frame, font_style, row, width):
@@ -252,6 +258,18 @@ def create_new_customer(name:str, car:str, reg_broj:str):
     with open('data.csv', 'a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow([name.strip().title(), car.strip().title(), reg_broj.strip().upper()])
+        
+#clear children help function
+def clear_children(frame_one, frame_two):
+        list_of_slaves = frame_one.pack_slaves()
+        for frame in list_of_slaves:
+            if '!frame' in str(frame):
+                frame.destroy()
+        
+        list_of_slaves = frame_two.pack_slaves()
+        for frame in list_of_slaves:
+            if '!frame' in str(frame):
+                frame.destroy()
 
 #helper function to fill the workorder tree    
 def fill_workorder_tree(name, reg, tree):
@@ -285,32 +303,31 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             child.destroy()
         
         
-    def modify_csv_entry(selection_estimate, edited_values):
+    def modify_csv_entry(selection, edited_values):
         if edited_values is None:
             return None
-        
-        turned_to_string = []
-        for item in selection_estimate['values']:
-            turned_to_string.append(str(item))
-            
+        turned_string = []
+        for item in selection['values']:
+            turned_string.append(str(item))
+        index = estimate_tree.get_selected_row_number()
         with open(file_location, 'r', encoding='utf-8') as mod_file:
             mod_reader = csv.reader(mod_file)
-            file_holder = []
-            for row in list(mod_reader)[1:]:
-                if turned_to_string == row:
-                    file_holder.append(edited_values)
-                else:
-                    file_holder.append(row)
+            file_holder = list(mod_reader)[1:]
+            file_holder.remove(turned_string)
+            file_holder.insert(index, edited_values)
+
         with open(file_location, 'w', newline='', encoding='utf-8') as edited_file:
             edit_writer = csv.writer(edited_file)
             edit_writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
-            for row in file_holder:
+            for row in reversed(file_holder):
                 edit_writer.writerow(row)
     
     def edit_selection(selection):
         if selection is None:
             return None
         if len(button_frame.winfo_children()) < 3:
+            if len(button_frame.winfo_children()) == 3:
+                button_frame.winfo_children()[-1].destroy()
             selection_frame = tk.Frame(button_frame)
             selection_frame.pack(side='left')
             
@@ -322,8 +339,8 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             selection_for_edit.insert_values(selection)
             
             modify_button = ttk.Button(mod_button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', 
-                                       command=lambda:[modify_csv_entry(estimate_tree.return_selection(), selection_for_edit.get_all_values()), printing_frame.destroy(),
-                                                       workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name)])
+                                    command=lambda:[modify_csv_entry(estimate_tree.return_selection(),selection_for_edit.get_all_values()), printing_frame.destroy(),
+                                                    workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name)])
             modify_button.pack(side='bottom', anchor='se')
             
     
@@ -359,7 +376,6 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton', 
                              command=lambda:[edit_selection(estimate_tree.return_selection())])
     edit_button.pack(side='left', anchor='sw')
-    
     
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton')
     print_button.pack(side='left', anchor='sw')
@@ -421,7 +437,6 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     #calculate totals of price and amount fileds
     def calculate_totals(list_of_workorders):
         for entry in list_of_workorders:
-            print('im here in calc totals')
             entry.calculate_total()
     
     #modify global counter variable
@@ -664,17 +679,6 @@ def main():
     database = DataVariables()
     database.parse_data()
     
-    def clear_children():
-        list_of_slaves = windows_frame.pack_slaves()
-        for frame in list_of_slaves:
-            if '!frame' in str(frame):
-                frame.destroy()
-        
-        list_of_slaves = windows_frame2.pack_slaves()
-        for frame in list_of_slaves:
-            if '!frame' in str(frame):
-                frame.destroy()
-        
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
@@ -726,7 +730,7 @@ def main():
     
     #find customer button
     query_customer_button = ttk.Button(buttons_frame, width=20,text='Pretraga Mušterije', style='bttn_style.TButton', 
-                                       command=lambda:[clear_children(), 
+                                       command=lambda:[clear_children(windows_frame, windows_frame2), 
                                                        find_customer_window(master_window, windows_frame, windows_frame2, database, font_style, tree_style)])
     query_customer_button.pack(side='right')
     find_customer_window(master_window, windows_frame, windows_frame2, database, font_style, tree_style)
