@@ -383,9 +383,20 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     #FIX CSV CREATION NAME LOGIC
     #necessary file paths and variables
     todays_date = datetime.date.today().strftime('%d_%m_%Y')
-    length_of_customer_directory = len(os.listdir(JOBS_STORAGE_PATH + csv_folder))
+    length_of_customer_directory = 0
     date_file_name = f'{todays_date}({length_of_customer_directory}).csv'
-    file_path = f'{JOBS_STORAGE_PATH}{csv_folder}\\{date_file_name}'
+    
+    def filename_number(filename, length):
+        storage = ''
+        if filename not in os.listdir(JOBS_STORAGE_PATH + csv_folder):
+            return filename
+        else:
+            storage = filename_number(f'{todays_date}({length+1}).csv', length+1)
+            return storage
+
+    file_path = f'{JOBS_STORAGE_PATH}{csv_folder}\\{filename_number(date_file_name, length_of_customer_directory)}'
+    
+    length_of_customer_directory = 0
     
     #first entry form when window is called
     entry_list = []
