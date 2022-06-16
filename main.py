@@ -22,6 +22,8 @@ FOREGROUND_COLOR = 'white'
 #needed global for adding new workorders
 ENTRY_COUNTER = 0
 
+#CLASSES
+#################################################################################################
 #data class for parsing files to cache
 class DataVariables(object):
     def __init__(self):
@@ -246,7 +248,11 @@ class WorkorderRowTemplate(object):
         self.price_entry.set_text(selection['values'][2])
         self.amount_entry.set_text(selection['values'][3])
         self.calculate_total()
-                
+#################################################################################################
+
+       
+#HELPER FUNCTIONS
+#################################################################################################
 #create data.csv if one does not exist in root
 if not os.path.isfile('data.csv'):
     with open('data.csv', 'w', newline='', encoding='utf-8') as file:
@@ -291,18 +297,21 @@ def fill_workorder_tree(name, reg, tree):
             tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), parts, str(total_price)], tag='folder')
             parts = []
             total_price = 0
+#################################################################################################
 
+#FRAME CREATIONG FUNCTIONS
+#################################################################################################
 #new window tree fill from selected csv with hands price entry, button to convert to PDF
 def workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name):
     if not selected_file:
         return None
     
-    #if len(parent_window.winfo_children()) > 1:
+    #help loop for window refresh
     for child in parent_window.winfo_children():
         if child.winfo_class() == 'Toplevel':
             child.destroy()
-        
-        
+    
+    #modification of csv for printing   
     def modify_csv_entry(selection, edited_values):
         if edited_values is None:
             return None
@@ -322,6 +331,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             for row in reversed(file_holder):
                 edit_writer.writerow(row)
     
+    #frame for modification of csv file which takes and returns values
     def edit_selection(selection):
         if selection is None:
             return None
@@ -680,7 +690,10 @@ def add_customer_window(master_window, parent_window, parent_window2, database, 
     
     confirm_button = ttk.Button(add_customer_frame, text='Unos u Bazu', width=20, style='bttn_style.TButton', command=add_to_csv)
     confirm_button.pack(side='top', pady=(5, 5))
+#################################################################################################
 
+#MAINLOOP
+#################################################################################################
 def main():
     #store data from csv in cache for use
     database = DataVariables()
@@ -749,6 +762,7 @@ def main():
 
     master_window.bind('<Escape>', lambda event:master_window.destroy())
     master_window.mainloop()
+#################################################################################################
 
 if __name__ == '__main__':
     main()
