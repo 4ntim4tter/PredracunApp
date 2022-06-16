@@ -325,9 +325,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     def edit_selection(selection):
         if selection is None:
             return None
+
+        if len(button_frame.winfo_children()) == 4:
+            button_frame.winfo_children()[-1].destroy()
+            button_frame.winfo_children()[-1].destroy()
+            
         if len(button_frame.winfo_children()) < 3:
-            if len(button_frame.winfo_children()) == 3:
-                button_frame.winfo_children()[-1].destroy()
             selection_frame = tk.Frame(button_frame)
             selection_frame.pack(side='left')
             
@@ -342,6 +345,10 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
                                     command=lambda:[modify_csv_entry(estimate_tree.return_selection(),selection_for_edit.get_all_values()), printing_frame.destroy(),
                                                     workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name)])
             modify_button.pack(side='bottom', anchor='se')
+            
+            estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
+            
+            print(len(button_frame.winfo_children()))
             
     
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
