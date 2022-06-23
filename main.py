@@ -288,13 +288,13 @@ def fill_workorder_tree(name, reg, tree):
         total_price = 0
         for csv_file in directory_contents:
             with open(f'{JOBS_STORAGE_PATH}{csv_file_path}\\{csv_file}', 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)           
-                for row in reader:
+                reader = csv.reader(file)           
+                for row in list(reader)[1:]:
                     if row != '':
-                        parts.append(row['dio']+',')
-                        total_price += (decimal.Decimal(row['ukupno']))  
-                parts[-1] = parts[-1][:-1]         
-            tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), parts, str(total_price)], tag='folder')
+                        parts.append(row[0]+',')
+                        total_price += (decimal.Decimal(row[4]))  
+                parts[-1] = parts[-1][:-1]  
+            tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), ' '.join(parts), str(total_price)], tag='folder')
             parts = []
             total_price = 0
 #################################################################################################
@@ -399,9 +399,9 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
 
 
     with open(file_location, 'r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            estimate_tree.insert('',list(row.values()),tag='estimate')
+        reader = csv.reader(file)
+        for row in list(reader)[1:]:
+            estimate_tree.insert('',row,tag='estimate')
             
 #add work order, create csv for workorder       
 def new_workorder(master_window, parent_window, database, font_style, csv_folder):
@@ -536,31 +536,31 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
                         
                         fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
             
-    #fill query fields
-    def autofill_fields():
-        tree_jobs.clear()
-        name = name_autocomplete.get_text()
-        car = car_autocomplete.get_text()
-        reg = reg_autocomplete.get_text()
+    #fill query fields //// OBSOLETE
+    # def autofill_fields():
+    #     tree_jobs.clear()
+    #     name = name_autocomplete.get_text()
+    #     car = car_autocomplete.get_text()
+    #     reg = reg_autocomplete.get_text()
         
-        name_autocomplete.delete()
-        car_autocomplete.delete()
-        reg_autocomplete.delete()
+    #     name_autocomplete.delete()
+    #     car_autocomplete.delete()
+    #     reg_autocomplete.delete()
 
-        if name != '':
-            customer = next(item for item in database.customer_data if item['ime'] == name.title())
-            name_autocomplete.set_text(customer['ime'])
-            car_autocomplete.set_text(customer['vozilo'])
-            reg_autocomplete.set_text(customer['reg_broj'])
+    #     if name != '':
+    #         customer = next(item for item in database.customer_data if item['ime'] == name.title())
+    #         name_autocomplete.set_text(customer['ime'])
+    #         car_autocomplete.set_text(customer['vozilo'])
+    #         reg_autocomplete.set_text(customer['reg_broj'])
             
-        if reg != '':
-            customer = next(item for item in database.customer_data if item['reg_broj'] == reg.upper())
-            if customer['ime'] != name:
-                name_autocomplete.set_text(customer['ime'])
-                car_autocomplete.set_text(customer['vozilo'])
-                reg_autocomplete.set_text(customer['reg_broj'])
+    #     if reg != '':
+    #         customer = next(item for item in database.customer_data if item['reg_broj'] == reg.upper())
+    #         if customer['ime'] != name:
+    #             name_autocomplete.set_text(customer['ime'])
+    #             car_autocomplete.set_text(customer['vozilo'])
+    #             reg_autocomplete.set_text(customer['reg_broj'])
                 
-        fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
+    #     fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
     
     #customer treeview
     customer_database_columns = ['Mušterija']
@@ -625,8 +625,6 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     add_new_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Novi Predračun', style='bttn_style.TButton', 
                                    command=lambda:is_data_entered(name_autocomplete.get_text(), car_autocomplete.get_text(), reg_autocomplete.get_text()))
     add_new_workorder_button.pack(side='right')
-    
-    master_window.bind('<Return>', lambda event:[autofill_fields()])
     
     #delete selection button
     buttons_frame_delete = tk.Frame(fields_frame)
