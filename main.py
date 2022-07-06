@@ -3,6 +3,8 @@ import os
 import shutil
 import re
 import decimal
+import webbrowser
+import pandas as pd 
 import tkinter as tk
 from tkinter import ttk, messagebox
 import datetime
@@ -297,6 +299,15 @@ def fill_workorder_tree(name, reg, tree):
             tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), ' '.join(parts), str(total_price)], tag='folder')
             parts = []
             total_price = 0
+            
+def create_pdf_from_csv(file_location):
+    dataframe = pd.read_csv(file_location)
+    to_browser = dataframe.to_html()
+    
+    with open('data.html', 'w', encoding='utf-8') as f:
+        f.write(to_browser)
+    webbrowser.open('data.html')
+    
 #################################################################################################
 
 #FRAME CREATIONG FUNCTIONS
@@ -394,7 +405,8 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
                              command=lambda:[edit_selection(estimate_tree.return_selection())])
     edit_button.pack(side='left', anchor='sw')
     
-    print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton')
+    print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton',
+                              command=lambda:[create_pdf_from_csv(file_location)])
     print_button.pack(side='left', anchor='sw')
 
 
