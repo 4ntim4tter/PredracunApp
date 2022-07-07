@@ -310,14 +310,14 @@ def create_pdf_from_csv(file_location):
         <head><title>Predračun</title></head>
         <link rel="stylesheet" type="text/css" href="table_style.css"/>
         <body>
+            <img src="logo.png" alt="logo" class='center'>
             {to_browser}
         </body>
     </html>.
     '''
     
     with open('data.html', 'w', encoding='utf-8') as f:
-        f.write("""<img src="logo.png" alt="logo" class="table_style.css">""")
-        f.write(html_string.format(to_browser=dataframe.to_html(classes='mystyle')))
+        f.write(html_string.format(to_browser=dataframe.to_html(classes=['mystyle','center'])))
         
     webbrowser.open('data.html')
     
