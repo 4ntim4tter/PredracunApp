@@ -302,11 +302,23 @@ def fill_workorder_tree(name, reg, tree):
             
 def create_pdf_from_csv(file_location):
     dataframe = pd.read_csv(file_location)
-    to_browser = dataframe.to_html()
+    pd.set_option('colheader_justify', 'center')
+    #to_browser = dataframe.to_html(index=0, justify='center', border=1, classes='table_style.css')
+    
+    html_string = ''' 
+    <html>
+        <head><title>Predračun</title></head>
+        <link rel="stylesheet" type="text/css" href="table_style.css"/>
+        <body>
+            {to_browser}
+        </body>
+    </html>.
+    '''
     
     with open('data.html', 'w', encoding='utf-8') as f:
-        f.write(to_browser)
-        f.write("""<img src="logo.png" alt="logo">""")
+        f.write("""<img src="logo.png" alt="logo" class="table_style.css">""")
+        f.write(html_string.format(to_browser=dataframe.to_html(classes='mystyle')))
+        
     webbrowser.open('data.html')
     
 #################################################################################################
