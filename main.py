@@ -306,6 +306,7 @@ def create_pdf_from_csv(file_location):
     
     with open('data.html', 'w', encoding='utf-8') as f:
         f.write(to_browser)
+        f.write("""<img src="logo.png" alt="logo">""")
     webbrowser.open('data.html')
     
 #################################################################################################
