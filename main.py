@@ -317,7 +317,7 @@ def create_pdf_from_csv(file_location):
     '''
     
     with open('data.html', 'w', encoding='utf-8') as f:
-        f.write(html_string.format(to_browser=dataframe.to_html(classes=['mystyle','center'])))
+        f.write(html_string.format(to_browser=dataframe.to_html(classes=['mystyle'])))
         
     webbrowser.open('data.html')
     

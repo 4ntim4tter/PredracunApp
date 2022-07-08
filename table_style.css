@@ -1,13 +1,15 @@
 .mystyle{
     font-size: medium;
-    font-family: Arial;
+    font-family:'Times New Roman', Times, serif;
+    width:100%;
     border-collapse: collapse;
-    border: 1px solid black;
+    border: 3px solid black;
 }
 
 .center{
     display: block;
-    margin-left: auto;
+    justify-self: center;
+    width:100%;
     margin-right: auto;
-    width: 50%;
+    margin-left: auto;
 }
