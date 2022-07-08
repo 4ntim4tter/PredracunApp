@@ -1,6 +1,10 @@
+@charset "UTF-8";
+
 .mystyle{
-    font-size: medium;
-    font-family:'Times New Roman', Times, serif;
+    font-size: large;
+    font-family:Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    text-transform: uppercase;
     width:100%;
     border-collapse: collapse;
     border: 3px solid black;
@@ -12,4 +16,9 @@
     width:100%;
     margin-right: auto;
     margin-left: auto;
+}
+
+.header_image{
+    display:block;
+    justify-self: right;
 }
