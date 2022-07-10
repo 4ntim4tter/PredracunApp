@@ -382,8 +382,6 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             
             estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
             
-            print(len(button_frame.winfo_children()))
-            
     
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
     file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
@@ -399,6 +397,10 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     button_frame = tk.Frame(printing_frame)
     button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     button_frame.pack(side='bottom', fill='x')
+    
+    work_entry_frame = tk.Frame(printing_frame)
+    work_entry_frame.config(background=BACKGROUND_COLOR)
+    work_entry_frame.pack(side='bottom', anchor='w')
     
     edit_button_frame = tk.Frame(button_frame)
     edit_button_frame.config(background=BACKGROUND_COLOR)
@@ -421,6 +423,8 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton',
                               command=lambda:[create_pdf_from_csv(file_location)])
     print_button.pack(side='left', anchor='sw')
+    
+    work_amount_entry = EntryTemplate('Ruke', work_entry_frame, font_style, ('left', (5, 0)), 'left', 20)
 
 
     with open(file_location, 'r', encoding='utf-8') as file:
@@ -438,7 +442,6 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     child_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     child_frame.grid()
     
-    #FIX CSV CREATION NAME LOGIC
     #necessary file paths and variables
     todays_date = datetime.date.today().strftime('%d_%m_%Y')
     length_of_customer_directory = 0
