@@ -181,6 +181,9 @@ class TreeviewTemplate(object):
             messagebox.showerror('Upozorenje!', 'Niste označili polje!')
             return None
         return self.treeview.index(self.treeview.selection()[0])
+    
+    def return_total(self):
+        print(self.treeview.get_children())
 
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
@@ -300,26 +303,48 @@ def fill_workorder_tree(name, reg, tree):
             parts = []
             total_price = 0
             
-def create_pdf_from_csv(file_location):
+def csv_to_html(file_location, work_price, total_value):
     dataframe = pd.read_csv(file_location)
     pd.set_option('colheader_justify', 'center')
-    #to_browser = dataframe.to_html(index=0, justify='center', border=1, classes='table_style.css')
     
-    html_string = ''' 
+    
+    html_string_table_header = ''' 
     <html>
         <head><title>Predračun</title></head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <link rel="stylesheet" type="text/css" href="table_style.css"/>
         <body>
             <img src="logo.png" alt="logo" class='header_image'>
             {to_browser}
+            <br>
+            <br>
+            {second_html_table}
         </body>
-    </html>.
+    </html>
     '''
     
+    second_html_table = '''
+            <table border="1" class="dataframe mystyle">
+    <thead>
+        <tr style="text-align: center;">
+        <th>RUKE</th>
+        <th>TOTAL</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+        <td>{work_price}</td>
+        <td>{total_price}</td>
+        </tr>
+    </tbody>
+    </table>
+        '''
+    
     with open('data.html', 'w', encoding='utf-8') as f:
-        f.write(html_string.format(to_browser=dataframe.to_html(classes=['mystyle'], index=False)))
+        f.write(html_string_table_header.format(to_browser=dataframe.to_html(classes=['mystyle'], index=False), 
+                                                second_html_table=second_html_table.format(work_price=work_price, total_price=777)))
         
-    webbrowser.open('data.html')
+    webbrowser.open('data.html', new=1)
     
 #################################################################################################
 
@@ -421,11 +446,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     edit_button.pack(side='left', anchor='sw')
     
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton',
-                              command=lambda:[create_pdf_from_csv(file_location)])
+                              command=lambda:[csv_to_html(file_location, work_amount_entry.get_text(), estimate_tree.return_total())])
     print_button.pack(side='left', anchor='sw')
     
     work_amount_entry = EntryTemplate('Ruke', work_entry_frame, font_style, ('left', (5, 0)), 'left', 20)
-
+    km_label = ttk.Label(work_entry_frame, font=font_style, text='KM', background=BACKGROUND_COLOR)
+    km_label.pack(side='left')
 
     with open(file_location, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
