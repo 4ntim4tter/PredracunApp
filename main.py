@@ -218,9 +218,9 @@ class WorkorderRowTemplate(object):
         
         self.part_entry = EntryTemplate('Dio', self.part_frame, font_style, ('top', (5,0)), 'left', width=self.width)
         self.brand_entry = EntryTemplate('Marka', self.brand_frame, font_style, ('top', (5,0)), 'left', width=self.width)
-        self.price_entry = EntryTemplate('Cijena', self.price_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.price_entry = EntryTemplate('Cijena[BAM]', self.price_frame, font_style, ('top', (5,0)), 'left', width=self.width)
         self.amount_entry = EntryTemplate('Količina', self.amount_frame, font_style, ('top', (5,0)), 'left', width=self.width)
-        self.total_entry = EntryTemplate('Ukupno', self.total_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.total_entry = EntryTemplate('Ukupno[BAM]', self.total_frame, font_style, ('top', (5,0)), 'left', width=self.width)
         self.total_entry.set_state(False)
     
     def calculate_total(self):
@@ -393,7 +393,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
 
         with open(file_location, 'w', newline='', encoding='utf-8') as edited_file:
             edit_writer = csv.writer(edited_file)
-            edit_writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
+            edit_writer.writerow(['dio', 'marka', 'cijena[BAM]', 'količina', 'ukupno[BAM]'])
             for row in reversed(file_holder):
                 edit_writer.writerow(row)
     
@@ -539,7 +539,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
         if not os.path.isfile(file_path) and csv_folder != '_':
             with open(file_path, 'a', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
-                writer.writerow(['dio', 'marka', 'cijena', 'količina', 'ukupno'])
+                writer.writerow(['dio', 'marka', 'cijena[BAM]', 'količina', 'ukupno[BAM]'])
                 for row in list_of_workorders:
                     if row.get_all_values() is not None:
                         writer.writerow(row.get_all_values())
