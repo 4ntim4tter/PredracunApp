@@ -183,7 +183,10 @@ class TreeviewTemplate(object):
         return self.treeview.index(self.treeview.selection()[0])
     
     def return_total(self):
-        print(self.treeview.get_children())
+        total = 0
+        for child in self.treeview.get_children():
+            total += int(self.treeview.set(child, 'Ukupno[BAM]'))
+        return total
 
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
@@ -327,8 +330,8 @@ def csv_to_html(file_location, work_price, total_value):
             <table border="1" class="dataframe mystyle">
     <thead>
         <tr style="text-align: center;">
-        <th>RUKE</th>
-        <th>TOTAL</th>
+        <th>RUKE[BAM]</th>
+        <th>DIJELOVI TOTAL[BAM]</th>
         </tr>
     </thead>
     <tbody>
@@ -337,12 +340,26 @@ def csv_to_html(file_location, work_price, total_value):
         <td>{total_price}</td>
         </tr>
     </tbody>
+    <br>
+    <thead>
+        <tr style="text-align: center;">
+        <th>TOTAL CIJENA[BAM]</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+        <td>{final_price}</td>
+        </tr>
+    </tbody>
+    
     </table>
         '''
     
     with open('data.html', 'w', encoding='utf-8') as f:
         f.write(html_string_table_header.format(to_browser=dataframe.to_html(classes=['mystyle'], index=False), 
-                                                second_html_table=second_html_table.format(work_price=work_price, total_price=777)))
+                                                second_html_table=second_html_table.format(work_price=work_price, 
+                                                                                           total_price=total_value, 
+                                                                                           final_price=decimal.Decimal(work_price)+decimal.Decimal(total_value))))
         
     webbrowser.open('data.html', new=1)
     
@@ -435,7 +452,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     print_button_frame.config(background=BACKGROUND_COLOR)
     print_button_frame.pack(side='left', fill='x')
     
-    estimate_columns = ('Dio', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
+    estimate_columns = ('Dio', 'Marka', 'Cijena[BAM]', 'Količina', 'Ukupno[BAM]')
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
     estimate_tree.remove_current_bind('<Double-Button-1>')
@@ -446,11 +463,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     edit_button.pack(side='left', anchor='sw')
     
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton',
-                              command=lambda:[csv_to_html(file_location, work_amount_entry.get_text(), estimate_tree.return_total())])
+                              command=lambda:[csv_to_html(file_location, work_amount_entry.get_text(), 
+                                                          estimate_tree.return_total())])
     print_button.pack(side='left', anchor='sw')
     
     work_amount_entry = EntryTemplate('Ruke', work_entry_frame, font_style, ('left', (5, 0)), 'left', 20)
-    km_label = ttk.Label(work_entry_frame, font=font_style, text='KM', background=BACKGROUND_COLOR)
+    km_label = ttk.Label(work_entry_frame, font=font_style, text='BAM', background=BACKGROUND_COLOR)
     km_label.pack(side='left')
 
     with open(file_location, 'r', encoding='utf-8') as file:
@@ -644,7 +662,7 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     treeview_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     treeview_frame.pack(side='top', fill='both', expand=True, pady=(10,0))
     
-    tree_columns = ('Datum', 'Dijelovi', 'Ukupna Cijena[KM]')
+    tree_columns = ('Datum', 'Dijelovi', 'Ukupna Cijena[BAM]')
     
     tree_jobs = TreeviewTemplate(treeview_frame, tree_columns, tree_style)
     tree_jobs.bind_key('<Double-Button-1>', 
