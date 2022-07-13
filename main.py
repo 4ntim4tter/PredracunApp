@@ -185,7 +185,7 @@ class TreeviewTemplate(object):
     def return_total(self):
         total = 0
         for child in self.treeview.get_children():
-            total += int(self.treeview.set(child, 'Ukupno[BAM]'))
+            total += decimal.Decimal(self.treeview.set(child, 'Ukupno[BAM]'))
         return total
 
 #base class for adding new workorder frame widgets
@@ -317,11 +317,19 @@ def csv_to_html(file_location, work_price, total_value):
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <link rel="stylesheet" type="text/css" href="table_style.css"/>
         <body>
-            <img src="logo.png" alt="logo" class='header_image'>
+            <div>
+                <div class="inline-block">
+                    <img src="logo.png">
+                    <img src="kontakt.png">
+                </div>
+            </div>
             {to_browser}
-            <br>
-            <br>
+            <br/>
+            <br/>
             {second_html_table}
+            {third_html_table}
+            <br/>
+            <br/>
         </body>
     </html>
     '''
@@ -340,7 +348,9 @@ def csv_to_html(file_location, work_price, total_value):
         <td>{total_price}</td>
         </tr>
     </tbody>
-    <br>
+    '''
+    third_html_table = '''
+            <table border="1" class="dataframe mystyle">
     <thead>
         <tr style="text-align: center;">
         <th>TOTAL CIJENA[BAM]</th>
@@ -351,15 +361,13 @@ def csv_to_html(file_location, work_price, total_value):
         <td>{final_price}</td>
         </tr>
     </tbody>
-    
-    </table>
-        '''
+    '''
     
     with open('data.html', 'w', encoding='utf-8') as f:
         f.write(html_string_table_header.format(to_browser=dataframe.to_html(classes=['mystyle'], index=False), 
                                                 second_html_table=second_html_table.format(work_price=work_price, 
-                                                                                           total_price=total_value, 
-                                                                                           final_price=decimal.Decimal(work_price)+decimal.Decimal(total_value))))
+                                                                                           total_price=total_value),
+                                                third_html_table=third_html_table.format(final_price=decimal.Decimal(work_price)+decimal.Decimal(total_value))))
         
     webbrowser.open('data.html', new=1)
     

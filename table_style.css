@@ -11,15 +11,14 @@
     text-align: center;
 }
 
-.center{
-    display: block;
-    justify-self: center;
-    width:100%;
-    margin-right: auto;
-    margin-left: auto;
+img{
+    max-width: 100%;
+    max-height: 100%;
+    width: 250px;
+    height: 90px;
 }
 
-.header_image{
-    display:block;
-    justify-self: left;
+.inline-block{
+    display: flex;
+    justify-content: space-between;
 }
