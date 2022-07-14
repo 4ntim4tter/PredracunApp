@@ -9,6 +9,20 @@
     border-collapse: collapse;
     border: 3px solid black;
     text-align: center;
+    margin-bottom: 10px;
+}
+
+.customerstyle{
+    font-size: large;
+    font-family:Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    width:5%;
+    white-space: nowrap;
+    border-collapse: collapse;
+    border: 3px solid black;
+    text-align: left;
+    margin-bottom: 10px;
 }
 
 img{
@@ -16,6 +30,7 @@ img{
     max-height: 100%;
     width: 250px;
     height: 90px;
+    margin-bottom: 10px;
 }
 
 .inline-block{

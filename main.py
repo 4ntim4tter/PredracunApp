@@ -23,6 +23,7 @@ BACKGROUND_COLOR = 'gray'
 FOREGROUND_COLOR = 'white'
 #needed global for adding new workorders
 ENTRY_COUNTER = 0
+CUSTOMER_VALUES = []
 
 #CLASSES
 #################################################################################################
@@ -306,10 +307,9 @@ def fill_workorder_tree(name, reg, tree):
             parts = []
             total_price = 0
             
-def csv_to_html(file_location, work_price, total_value):
+def csv_to_html(file_location, work_price, total_value, CUSTOMER_VALUES):
     dataframe = pd.read_csv(file_location)
     pd.set_option('colheader_justify', 'center')
-    
     
     html_string_table_header = ''' 
     <html>
@@ -323,15 +323,31 @@ def csv_to_html(file_location, work_price, total_value):
                     <img src="kontakt.png">
                 </div>
             </div>
+            {customer_data}
             {to_browser}
-            <br/>
-            <br/>
             {second_html_table}
             {third_html_table}
-            <br/>
-            <br/>
         </body>
     </html>
+    '''
+    
+    customer_data = '''
+            <table border="1" class="dataframe customerstyle">
+    <thead>
+        <tr style="text-alight: left;">
+        <th>IME I PREZIME</th>
+        <th>{customer_name}</th>
+    </thead>
+    <tbody>
+        <tr>
+        <td>MARKA I MODEL VOZILA</td>
+        <td>{customer_car}</td>
+        </tr>
+        <tr>
+        <td>REGISTARSKI BROJ</td>
+        <td>{customer_reg}</td>
+        </tr>
+    </tbody>
     '''
     
     second_html_table = '''
@@ -364,9 +380,8 @@ def csv_to_html(file_location, work_price, total_value):
     '''
     
     with open('data.html', 'w', encoding='utf-8') as f:
-        f.write(html_string_table_header.format(to_browser=dataframe.to_html(classes=['mystyle'], index=False), 
-                                                second_html_table=second_html_table.format(work_price=work_price, 
-                                                                                           total_price=total_value),
+        f.write(html_string_table_header.format(customer_data=customer_data.format(customer_name=CUSTOMER_VALUES[0], customer_car=CUSTOMER_VALUES[1], customer_reg=CUSTOMER_VALUES[2]), to_browser=dataframe.to_html(classes=['mystyle'], index=False), 
+                                                second_html_table=second_html_table.format(work_price=work_price, total_price=total_value),
                                                 third_html_table=third_html_table.format(final_price=decimal.Decimal(work_price)+decimal.Decimal(total_value))))
         
     webbrowser.open('data.html', new=1)
@@ -376,7 +391,7 @@ def csv_to_html(file_location, work_price, total_value):
 #FRAME CREATIONG FUNCTIONS
 #################################################################################################
 #new window tree fill from selected csv with hands price entry, button to convert to PDF
-def workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name):
+def workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES):
     if not selected_file:
         return None
     
@@ -427,7 +442,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             
             modify_button = ttk.Button(mod_button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', 
                                     command=lambda:[modify_csv_entry(estimate_tree.return_selection(),selection_for_edit.get_all_values()), printing_frame.destroy(),
-                                                    workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name)])
+                                                    workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES)])
             modify_button.pack(side='bottom', anchor='se')
             
             estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
@@ -472,7 +487,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton',
                               command=lambda:[csv_to_html(file_location, work_amount_entry.get_text(), 
-                                                          estimate_tree.return_total())])
+                                                          estimate_tree.return_total(), CUSTOMER_VALUES)])
     print_button.pack(side='left', anchor='sw')
     
     work_amount_entry = EntryTemplate('Ruke', work_entry_frame, font_style, ('left', (5, 0)), 'left', 20)
@@ -594,7 +609,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
 
 #FIND CUSTOMER ADD NEW WORK TO EXISTING WORK FILE
 def find_customer_window(master_window, parent_window, parent_window2, database, font_style, tree_style):
-    
+    global CUSTOMER_VALUES
     #delete workorder
     def delete_workorder():
         tree_jobs.delete(f"{name_autocomplete.get_text().lower().replace(' ', '')}_{reg_autocomplete.get_text().upper().replace(' ','')}")
@@ -602,6 +617,8 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     #fill customer tree
     def fill_from_database():
         tree_jobs.clear()
+        global CUSTOMER_VALUES
+        CUSTOMER_VALUES = []
         selected = tree_customer_database.treeview.selection()
         if selected != ():
             selected_list = tree_customer_database.treeview.item(selected[0])['values'][0].split(':')
@@ -613,6 +630,10 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
                         name_autocomplete.set_text(row['ime'])
                         car_autocomplete.set_text(row['vozilo'])
                         reg_autocomplete.set_text(row['reg_broj'])
+                        
+                        CUSTOMER_VALUES.append(name_autocomplete.get_text())
+                        CUSTOMER_VALUES.append(car_autocomplete.get_text())
+                        CUSTOMER_VALUES.append(reg_autocomplete.get_text())
                         
                         fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
             
@@ -678,7 +699,8 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
                                                            font_style, 
                                                            tree_style,
                                                            tree_jobs.return_selection(), 
-                                                           f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}'))
+                                                           f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}',
+                                                           CUSTOMER_VALUES))
     
     #check if data is entered in customer query
     def is_data_entered(name, car, reg):
@@ -699,7 +721,8 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     
     open_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Otvori Predračun', style='bttn_style.TButton',
                                        command=lambda:workorder_for_printing(parent_window, font_style, tree_style, 
-                                        tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}'))
+                                        tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}',
+                                        CUSTOMER_VALUES))
     open_workorder_button.pack(side='right')
     
     add_new_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Novi Predračun', style='bttn_style.TButton', 
