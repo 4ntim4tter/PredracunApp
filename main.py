@@ -307,7 +307,15 @@ def fill_workorder_tree(name, reg, tree):
             parts = []
             total_price = 0
             
-def csv_to_html(file_location, work_price, total_value, CUSTOMER_VALUES):
+def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_VALUES):
+    if work_price is None or work_price == "":
+        messagebox.showerror("Upozorenje!", "Potrebno je unijeti cijenu rada!", parent=parent_window)
+        return None
+    
+    if work_price.isnumeric() is False:    
+        messagebox.showerror("Upozorenje!", "U polje \"Rad\" možete unijeti samo brojeve.", parent=parent_window)
+        return None
+    
     dataframe = pd.read_csv(file_location)
     pd.set_option('colheader_justify', 'center')
     
@@ -354,7 +362,7 @@ def csv_to_html(file_location, work_price, total_value, CUSTOMER_VALUES):
             <table border="1" class="dataframe mystyle">
     <thead>
         <tr style="text-align: center;">
-        <th>RUKE[BAM]</th>
+        <th>RAD[BAM]</th>
         <th>DIJELOVI TOTAL[BAM]</th>
         </tr>
     </thead>
@@ -486,11 +494,11 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     edit_button.pack(side='left', anchor='sw')
     
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton',
-                              command=lambda:[csv_to_html(file_location, work_amount_entry.get_text(), 
+                              command=lambda:[csv_to_html(printing_frame, file_location, work_amount_entry.get_text(), 
                                                           estimate_tree.return_total(), CUSTOMER_VALUES)])
     print_button.pack(side='left', anchor='sw')
     
-    work_amount_entry = EntryTemplate('Ruke', work_entry_frame, font_style, ('left', (5, 0)), 'left', 20)
+    work_amount_entry = EntryTemplate('Rad', work_entry_frame, font_style, ('left', (5, 0)), 'left', 20)
     km_label = ttk.Label(work_entry_frame, font=font_style, text='BAM', background=BACKGROUND_COLOR)
     km_label.pack(side='left')
 
@@ -636,32 +644,6 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
                         CUSTOMER_VALUES.append(reg_autocomplete.get_text())
                         
                         fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
-            
-    #fill query fields //// OBSOLETE
-    # def autofill_fields():
-    #     tree_jobs.clear()
-    #     name = name_autocomplete.get_text()
-    #     car = car_autocomplete.get_text()
-    #     reg = reg_autocomplete.get_text()
-        
-    #     name_autocomplete.delete()
-    #     car_autocomplete.delete()
-    #     reg_autocomplete.delete()
-
-    #     if name != '':
-    #         customer = next(item for item in database.customer_data if item['ime'] == name.title())
-    #         name_autocomplete.set_text(customer['ime'])
-    #         car_autocomplete.set_text(customer['vozilo'])
-    #         reg_autocomplete.set_text(customer['reg_broj'])
-            
-    #     if reg != '':
-    #         customer = next(item for item in database.customer_data if item['reg_broj'] == reg.upper())
-    #         if customer['ime'] != name:
-    #             name_autocomplete.set_text(customer['ime'])
-    #             car_autocomplete.set_text(customer['vozilo'])
-    #             reg_autocomplete.set_text(customer['reg_broj'])
-                
-    #     fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
     
     #customer treeview
     customer_database_columns = ['Mušterija']
