@@ -1,5 +1,6 @@
 import csv
 import os
+import sys
 import shutil
 import re
 import decimal
@@ -11,13 +12,22 @@ import datetime
 import tkinter.font as tkFont
 
 #check if /jobs/ data directory exists, create new if not
-JOBS_STORAGE_PATH = os.path.join(os.path.dirname(__file__) + '\jobs\\')
+
+JOBS_STORAGE_PATH = ''
+if getattr(sys, 'frozen', False):
+    JOBS_STORAGE_PATH = sys._MEIPASS
+else:
+    JOBS_STORAGE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__) + '\jobs'))
+    JOBS_STORAGE_PATH = JOBS_STORAGE_PATH + '\\'
 if not os.path.isdir(JOBS_STORAGE_PATH):
     os.mkdir(JOBS_STORAGE_PATH)
+print(JOBS_STORAGE_PATH)
 
-ARCHIVE_PATH = os.path.join(os.path.dirname(__file__) + '\\archive\\')
+ARCHIVE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__) + '\\archive\\'))
+ARCHIVE_PATH = ARCHIVE_PATH + '\\'
 if not os.path.isdir(ARCHIVE_PATH):
     os.mkdir(ARCHIVE_PATH)
+print(ARCHIVE_PATH)
 
 BACKGROUND_COLOR = 'gray'
 FOREGROUND_COLOR = 'white'
