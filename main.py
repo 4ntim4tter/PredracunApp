@@ -186,7 +186,7 @@ class TreeviewTemplate(object):
     def return_total(self):
         total = 0
         for child in self.treeview.get_children():
-            total += decimal.Decimal(self.treeview.set(child, 'Ukupno[BAM]'))
+            total += decimal.Decimal(self.treeview.set(child, 'Ukupno[KM]'))
         return total
 
 #base class for adding new workorder frame widgets
@@ -217,11 +217,11 @@ class WorkorderRowTemplate(object):
         self.total_frame.config(background=BACKGROUND_COLOR)
         self.total_frame.grid(row=self.row, column=5)
         
-        self.part_entry = EntryTemplate('Dio', self.part_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.part_entry = EntryTemplate('Materijal', self.part_frame, font_style, ('top', (5,0)), 'left', width=self.width)
         self.brand_entry = EntryTemplate('Marka', self.brand_frame, font_style, ('top', (5,0)), 'left', width=self.width)
-        self.price_entry = EntryTemplate('Cijena[BAM]', self.price_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.price_entry = EntryTemplate('Cijena[KM]', self.price_frame, font_style, ('top', (5,0)), 'left', width=self.width)
         self.amount_entry = EntryTemplate('Količina', self.amount_frame, font_style, ('top', (5,0)), 'left', width=self.width)
-        self.total_entry = EntryTemplate('Ukupno[BAM]', self.total_frame, font_style, ('top', (5,0)), 'left', width=self.width)
+        self.total_entry = EntryTemplate('Ukupno[KM]', self.total_frame, font_style, ('top', (5,0)), 'left', width=self.width)
         self.total_entry.set_state(False)
     
     def calculate_total(self):
@@ -331,6 +331,7 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
                     <img src="kontakt.png">
                 </div>
             </div>
+            <center class="dataframe fontstyle"><strong>PREDRAČUN</strong></center>
             {customer_data}
             {to_browser}
             {second_html_table}
@@ -362,8 +363,8 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
             <table border="1" class="dataframe mystyle">
     <thead>
         <tr style="text-align: center;">
-        <th>RAD[BAM]</th>
-        <th>DIJELOVI TOTAL[BAM]</th>
+        <th>RAD[KM]</th>
+        <th>DIJELOVI TOTAL[KM]</th>
         </tr>
     </thead>
     <tbody>
@@ -377,7 +378,7 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
             <table border="1" class="dataframe mystyle">
     <thead>
         <tr style="text-align: center;">
-        <th>TOTAL CIJENA[BAM]</th>
+        <th>TOTAL CIJENA[KM]</th>
         </tr>
     </thead>
     <tbody>
@@ -424,7 +425,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
 
         with open(file_location, 'w', newline='', encoding='utf-8') as edited_file:
             edit_writer = csv.writer(edited_file)
-            edit_writer.writerow(['dio', 'marka', 'cijena[BAM]', 'količina', 'ukupno[BAM]'])
+            edit_writer.writerow(['materijal', 'marka', 'cijena[KM]', 'količina', 'ukupno[KM]'])
             for row in reversed(file_holder):
                 edit_writer.writerow(row)
     
@@ -483,7 +484,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     print_button_frame.config(background=BACKGROUND_COLOR)
     print_button_frame.pack(side='left', fill='x')
     
-    estimate_columns = ('Dio', 'Marka', 'Cijena[BAM]', 'Količina', 'Ukupno[BAM]')
+    estimate_columns = ('Materijal', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
     estimate_tree.remove_current_bind('<Double-Button-1>')
@@ -570,7 +571,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
         if not os.path.isfile(file_path) and csv_folder != '_':
             with open(file_path, 'a', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
-                writer.writerow(['dio', 'marka', 'cijena[BAM]', 'količina', 'ukupno[BAM]'])
+                writer.writerow(['materijal', 'marka', 'cijena[KM]', 'količina', 'ukupno[KM]'])
                 for row in list_of_workorders:
                     if row.get_all_values() is not None:
                         writer.writerow(row.get_all_values())
@@ -673,7 +674,7 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     treeview_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     treeview_frame.pack(side='top', fill='both', expand=True, pady=(10,0))
     
-    tree_columns = ('Datum', 'Dijelovi', 'Ukupna Cijena[BAM]')
+    tree_columns = ('Datum', 'Dijelovi', 'Ukupna Cijena[KM]')
     
     tree_jobs = TreeviewTemplate(treeview_frame, tree_columns, tree_style)
     tree_jobs.bind_key('<Double-Button-1>', 

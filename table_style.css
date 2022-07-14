@@ -37,3 +37,11 @@ img{
     display: flex;
     justify-content: space-between;
 }
+
+.fontstyle{
+    font-size: xx-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
