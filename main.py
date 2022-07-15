@@ -11,8 +11,12 @@ from tkinter import ttk, messagebox
 import datetime
 import tkinter.font as tkFont
 
-#check if /jobs/ data directory exists, create new if not
+#TO-DO
+#Autocomplete material
+#delete entry while modifying workorder
+#add new entry to already created workorder
 
+#check if /jobs/ data directory exists, create new if not
 JOBS_STORAGE_PATH = ''
 if getattr(sys, 'frozen', False):
     JOBS_STORAGE_PATH = os.path.dirname(sys.executable)
@@ -271,6 +275,13 @@ class WorkorderRowTemplate(object):
         self.price_entry.set_text(selection['values'][2])
         self.amount_entry.set_text(selection['values'][3])
         self.calculate_total()
+        
+    def destroy(self):
+        self.part_frame.destroy()
+        self.brand_frame.destroy()
+        self.price_frame.destroy()
+        self.amount_frame.destroy()
+        self.total_frame.destroy()   
 #################################################################################################
 
        
@@ -568,6 +579,7 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
                                                     entry_list.append(WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER, 20)), 
                                                     main_frame.update(),
                                                     insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se'),
+                                                    delete_entry_frame.grid(row=ENTRY_COUNTER+1, column=3, sticky='se'),
                                                     cancel_button_frame.grid(row=ENTRY_COUNTER+1, column=4, sticky='se')])
     add_new_entry_button.grid(row=0, column=0)
     
@@ -581,6 +593,10 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
         global ENTRY_COUNTER
         ENTRY_COUNTER = 0
         main_frame.destroy()
+        
+    def decrement_counter():
+        global ENTRY_COUNTER
+        ENTRY_COUNTER -= 1
     
     #create and populate a new CSV file    
     def populate_csv(list_of_workorders):
@@ -615,11 +631,21 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
                                  command=lambda:[make_new_workorder()])
     insert_contents_button.grid()
     
+    #delete entry from workorder
+    delete_entry_frame = tk.Frame(child_frame)
+    delete_entry_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
+    delete_entry_frame.grid(row=ENTRY_COUNTER+1, column=3, sticky='se', pady=(3, 0))
+    
+    delete_last_entry = ttk.Button(delete_entry_frame, text="Obriši Unos", width=19, style='bttn_style.TButton', 
+                                 command=lambda:[decrement_counter(), entry_list[-1].destroy(), entry_list.pop()])
+    delete_last_entry.grid() 
     
     #cancel workorder button
     cancel_button_frame = tk.Frame(child_frame)
     cancel_button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     cancel_button_frame.grid(row=ENTRY_COUNTER+1, column=4, sticky='se', pady=(3, 0))
+    
+
     
     cancel_contents_button = ttk.Button(cancel_button_frame, text="Odustani", width=19, style='bttn_style.TButton', 
                                  command=lambda:set_counter_to_zero())
@@ -628,7 +654,12 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     
     #destroy main frame and calculate prices for workorder on bind press
     main_frame.focus_set()
-    main_frame.bind('<Return>', lambda event:calculate_totals(entry_list))
+    main_frame.bind('<Return>', lambda event:[calculate_totals(entry_list), increment_counter(), 
+                                                    entry_list.append(WorkorderRowTemplate(child_frame, font_style, ENTRY_COUNTER, 20)), 
+                                                    main_frame.update(),
+                                                    insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se'),
+                                                    delete_entry_frame.grid(row=ENTRY_COUNTER+1, column=3, sticky='se'),
+                                                    cancel_button_frame.grid(row=ENTRY_COUNTER+1, column=4, sticky='se')])
     main_frame.bind('<Escape>', lambda event:main_frame.destroy())
     main_frame.protocol('WM_DELETE_WINDOW', set_counter_to_zero)
 
