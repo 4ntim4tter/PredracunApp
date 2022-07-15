@@ -359,16 +359,16 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
     <thead>
         <tr style="text-alight: left;">
         <th>IME I PREZIME</th>
-        <th>{customer_name}</th>
+        <th class="dataframe normalfont">{customer_name}</th>
     </thead>
     <tbody>
         <tr>
         <td>MARKA I MODEL VOZILA</td>
-        <td>{customer_car}</td>
+        <td class="dataframe normalfont">{customer_car}</td>
         </tr>
         <tr>
         <td>REGISTARSKI BROJ</td>
-        <td>{customer_reg}</td>
+        <td class="dataframe normalfont">{customer_reg}</td>
         </tr>
     </tbody>
     '''
@@ -383,8 +383,8 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
     </thead>
     <tbody>
         <tr>
-        <td>{work_price}</td>
-        <td>{total_price}</td>
+        <td class="dataframe normalfont">{work_price}</td>
+        <td class="dataframe normalfont">{total_price}</td>
         </tr>
     </tbody>
     '''
@@ -397,13 +397,16 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
     </thead>
     <tbody>
         <tr>
-        <td>{final_price}</td>
+        <td class="dataframe normalfont">{final_price}</td>
         </tr>
     </tbody>
     '''
     
     with open('data.html', 'w', encoding='utf-8') as f:
-        f.write(html_string_table_header.format(customer_data=customer_data.format(customer_name=CUSTOMER_VALUES[0], customer_car=CUSTOMER_VALUES[1], customer_reg=CUSTOMER_VALUES[2]), to_browser=dataframe.to_html(classes=['mystyle'], index=False), 
+        to_browser=dataframe.to_html(classes=['mystyle'], index=False)
+        print(to_browser)
+        f.write(html_string_table_header.format(customer_data=customer_data.format(customer_name=CUSTOMER_VALUES[0], customer_car=CUSTOMER_VALUES[1], customer_reg=CUSTOMER_VALUES[2]), 
+                                                to_browser=to_browser.replace('<td>', '<td class="dataframe normalfont">'), 
                                                 second_html_table=second_html_table.format(work_price=work_price, total_price=total_value),
                                                 third_html_table=third_html_table.format(final_price=decimal.Decimal(work_price)+decimal.Decimal(total_value))))
         
