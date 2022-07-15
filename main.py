@@ -15,19 +15,23 @@ import tkinter.font as tkFont
 
 JOBS_STORAGE_PATH = ''
 if getattr(sys, 'frozen', False):
-    JOBS_STORAGE_PATH = sys._MEIPASS
+    JOBS_STORAGE_PATH = os.path.dirname(sys.executable)
+    JOBS_STORAGE_PATH = JOBS_STORAGE_PATH + '\jobs\\'
 else:
     JOBS_STORAGE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__) + '\jobs'))
     JOBS_STORAGE_PATH = JOBS_STORAGE_PATH + '\\'
 if not os.path.isdir(JOBS_STORAGE_PATH):
     os.mkdir(JOBS_STORAGE_PATH)
-print(JOBS_STORAGE_PATH)
 
-ARCHIVE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__) + '\\archive\\'))
-ARCHIVE_PATH = ARCHIVE_PATH + '\\'
+ARCHIVE_PATH = ''
+if getattr(sys, 'frozen', False): 
+    ARCHIVE_PATH = os.path.dirname(sys.executable)
+    ARCHIVE_PATH = ARCHIVE_PATH + '\\archive\\'
+else:
+    ARCHIVE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__) + '\\archive\\'))
+    ARCHIVE_PATH = ARCHIVE_PATH + '\\'
 if not os.path.isdir(ARCHIVE_PATH):
     os.mkdir(ARCHIVE_PATH)
-print(ARCHIVE_PATH)
 
 BACKGROUND_COLOR = 'gray'
 FOREGROUND_COLOR = 'white'
