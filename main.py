@@ -358,6 +358,7 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
                 </div>
             </div>
             <center class="dataframe fontstyle"><strong>PREDRAČUN</strong></center>
+            <p align="right"><right><strong>DANA:{todays_date}</strong></right></p>
             {customer_data}
             {to_browser}
             {second_html_table}
@@ -417,7 +418,8 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
     with open('data.html', 'w', encoding='utf-8') as f:
         to_browser=dataframe.to_html(classes=['mystyle'], index=False)
         to_browser = to_browser.replace('<td>', '<td class="dataframe normalfont">')
-        f.write(html_string_table_header.format(customer_data=customer_data.format(customer_name=CUSTOMER_VALUES[0], customer_car=CUSTOMER_VALUES[1], customer_reg=CUSTOMER_VALUES[2]), 
+        f.write(html_string_table_header.format(todays_date=datetime.date.today().strftime('%d.%m.%Y.g.'),
+                                                customer_data=customer_data.format(customer_name=CUSTOMER_VALUES[0], customer_car=CUSTOMER_VALUES[1], customer_reg=CUSTOMER_VALUES[2]), 
                                                 to_browser=to_browser, 
                                                 second_html_table=second_html_table.format(work_price=work_price, total_price=total_value),
                                                 third_html_table=third_html_table.format(final_price=decimal.Decimal(work_price)+decimal.Decimal(total_value))))
