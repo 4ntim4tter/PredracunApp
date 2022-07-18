@@ -190,14 +190,14 @@ class TreeviewTemplate(object):
         
     def return_selection(self):
         if not self.treeview.selection():
-            messagebox.showerror('Upozorenje!', 'Niste označili polje!')
+            messagebox.showerror('Upozorenje!', 'Niste označili polje!', parent=self.treeview_frame)
             return None
         else:
             return self.treeview.item(self.treeview.selection()[0])
 
     def get_selected_row_number(self):
         if not self.treeview.selection():
-            messagebox.showerror('Upozorenje!', 'Niste označili polje!')
+            messagebox.showerror('Upozorenje!', 'Niste označili polje!', parent=self.treeview_frame)
             return None
         return self.treeview.index(self.treeview.selection()[0])
     
@@ -487,16 +487,16 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
         if selection is None:
             return None
 
-        if len(button_frame.winfo_children()) == 4:
-            button_frame.winfo_children()[-1].destroy()
-            button_frame.winfo_children()[-1].destroy()
+        if len(work_entry_frame.winfo_children()) == 5:
+            work_entry_frame.winfo_children()[-1].destroy()
+            work_entry_frame.winfo_children()[-1].destroy()
             
-        if len(button_frame.winfo_children()) < 3:
-            selection_frame = tk.Frame(button_frame)
+        if len(work_entry_frame.winfo_children()) < 4:
+            selection_frame = tk.Frame(work_entry_frame)
             selection_frame.pack(side='left')
             
-            mod_button_frame = tk.Frame(button_frame)
-            mod_button_frame.pack(side='bottom')
+            mod_button_frame = tk.Frame(work_entry_frame)
+            mod_button_frame.pack(side='left')
             
             selection_for_edit = WorkorderRowTemplate(selection_frame, font_style, 0, 10)
             selection_for_edit.total_frame.grid_forget()
@@ -505,10 +505,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             modify_button = ttk.Button(mod_button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', 
                                     command=lambda:[modify_csv_entry(estimate_tree.return_selection(),selection_for_edit.get_all_values()), printing_frame.destroy(),
                                                     workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES)])
-            modify_button.pack(side='bottom', anchor='se')
+            modify_button.pack(side='left', anchor='se')
             
             estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
-            
+    
+    def insert_new_part(file_location):
+        print(file_location)
     
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
     file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
@@ -537,14 +539,18 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     print_button_frame.config(background=BACKGROUND_COLOR)
     print_button_frame.pack(side='left', fill='x')
     
+    newpart_button_frame = tk.Frame(button_frame)
+    newpart_button_frame.config(background=BACKGROUND_COLOR)
+    newpart_button_frame.pack(side='left', fill='x')
+    
     estimate_columns = ('Materijal', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
     estimate_tree.remove_current_bind('<Double-Button-1>')
-    estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
+    estimate_tree.bind_key('<Double-Button-1>', lambda event:[edit_selection(estimate_tree.return_selection())])
     
     edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton', 
-                             command=lambda:[edit_selection(estimate_tree.return_selection())])
+                             command=lambda:edit_selection(estimate_tree.return_selection()))
     edit_button.pack(side='left', anchor='sw')
     
     print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton',
@@ -552,8 +558,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
                                                           estimate_tree.return_total(), CUSTOMER_VALUES)])
     print_button.pack(side='left', anchor='sw')
     
+    newpart_button = ttk.Button(newpart_button_frame, width=20, text='Dodaj Dio', style='bttn_style.TButton', 
+                             command=lambda:[insert_new_part(file_location)])
+    newpart_button.pack(side='left', anchor='sw')
+    
     work_amount_entry = EntryTemplate('Rad', work_entry_frame, font_style, ('left', (5, 0)), 'left', 20)
-    km_label = ttk.Label(work_entry_frame, font=font_style, text='BAM', background=BACKGROUND_COLOR)
+    km_label = ttk.Label(work_entry_frame, font=font_style, text='KM |', background=BACKGROUND_COLOR)
     km_label.pack(side='left')
 
     with open(file_location, 'r', encoding='utf-8') as file:
