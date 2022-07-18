@@ -206,6 +206,7 @@ class TreeviewTemplate(object):
         for child in self.treeview.get_children():
             total += decimal.Decimal(self.treeview.set(child, 'Ukupno[KM]'))
         return total
+    
 
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
@@ -421,6 +422,29 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
                                                 second_html_table=second_html_table.format(work_price=work_price, total_price=total_value),
                                                 third_html_table=third_html_table.format(final_price=decimal.Decimal(work_price)+decimal.Decimal(total_value))))
     webbrowser.open('data.html', new=1)
+
+ #fill customer tree
+def fill_from_database(tree_jobs, tree_customer_database, name_autocomplete, car_autocomplete, reg_autocomplete):
+    tree_jobs.clear()
+    global CUSTOMER_VALUES
+    CUSTOMER_VALUES = []
+    selected = tree_customer_database.treeview.selection()
+    if selected != ():
+        selected_list = tree_customer_database.treeview.item(selected[0])['values'][0].split(':')
+    
+        with open('data.csv', 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row['ime'] == selected_list[0].replace('_', ' ') and row['reg_broj'] == selected_list[1].replace('_', ' '):
+                    name_autocomplete.set_text(row['ime'])
+                    car_autocomplete.set_text(row['vozilo'])
+                    reg_autocomplete.set_text(row['reg_broj'])
+                    
+                    CUSTOMER_VALUES.append(name_autocomplete.get_text())
+                    CUSTOMER_VALUES.append(car_autocomplete.get_text())
+                    CUSTOMER_VALUES.append(reg_autocomplete.get_text())
+                    
+                    fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
     
 #################################################################################################
 
@@ -536,7 +560,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             estimate_tree.insert('',row,tag='estimate')
             
 #add work order, create csv for workorder       
-def new_workorder(master_window, parent_window, database, font_style, csv_folder):
+def new_workorder(master_window, parent_window, database, font_style, csv_folder, tree_vars):
     
     main_frame = tk.Toplevel(parent_window)
     main_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
@@ -627,8 +651,8 @@ def new_workorder(master_window, parent_window, database, font_style, csv_folder
     insert_button_frame.config(background=BACKGROUND_COLOR, highlightbackground='black', highlightcolor='black', highlightthickness=2)
     insert_button_frame.grid(row=ENTRY_COUNTER+1, column=5, sticky='se', pady=(3, 0))
     
-    insert_contents_button = ttk.Button(insert_button_frame, text="Otvori novi predračun", width=19, style='bttn_style.TButton', 
-                                 command=lambda:[make_new_workorder()])
+    insert_contents_button = ttk.Button(insert_button_frame, text="Otvori novi predračun", width=19, style='bttn_style.TButton',
+                                 command=lambda:[make_new_workorder(), tree_vars[0].clear(), fill_from_database(tree_vars[0], tree_vars[1], tree_vars[2], tree_vars[3], tree_vars[4],)])
     insert_contents_button.grid()
     
     #delete entry from workorder
@@ -670,34 +694,11 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     def delete_workorder():
         tree_jobs.delete(f"{name_autocomplete.get_text().lower().replace(' ', '')}_{reg_autocomplete.get_text().upper().replace(' ','')}")
     
-    #fill customer tree
-    def fill_from_database():
-        tree_jobs.clear()
-        global CUSTOMER_VALUES
-        CUSTOMER_VALUES = []
-        selected = tree_customer_database.treeview.selection()
-        if selected != ():
-            selected_list = tree_customer_database.treeview.item(selected[0])['values'][0].split(':')
-        
-            with open('data.csv', 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    if row['ime'] == selected_list[0].replace('_', ' ') and row['reg_broj'] == selected_list[1].replace('_', ' '):
-                        name_autocomplete.set_text(row['ime'])
-                        car_autocomplete.set_text(row['vozilo'])
-                        reg_autocomplete.set_text(row['reg_broj'])
-                        
-                        CUSTOMER_VALUES.append(name_autocomplete.get_text())
-                        CUSTOMER_VALUES.append(car_autocomplete.get_text())
-                        CUSTOMER_VALUES.append(reg_autocomplete.get_text())
-                        
-                        fill_workorder_tree(name_autocomplete.get_text(), reg_autocomplete.get_text(), tree_jobs)
-    
     #customer treeview
     customer_database_columns = ['Mušterija']
     
     tree_customer_database = TreeviewTemplate(parent_window2, customer_database_columns, tree_style)
-    tree_customer_database.bind_key('<Double-Button-1>', lambda event:fill_from_database())
+    tree_customer_database.bind_key('<Double-Button-1>', lambda event:fill_from_database(tree_jobs, tree_customer_database, name_autocomplete, car_autocomplete, reg_autocomplete))
     
     for column in customer_database_columns:
         tree_customer_database.treeview.column(column, width=250)
@@ -741,7 +742,8 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
                       fields_frame, 
                       database, 
                       font_style, 
-                      name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper().replace(' ',''))
+                      name_autocomplete.get_text().lower().replace(' ', '') + '_' + reg_autocomplete.get_text().upper().replace(' ',''), 
+                      [tree_jobs, tree_customer_database, name_autocomplete, car_autocomplete, reg_autocomplete])
     
     #binds and buttons
     #add new workorder button
