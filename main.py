@@ -207,6 +207,9 @@ class TreeviewTemplate(object):
             total += decimal.Decimal(self.treeview.set(child, 'Ukupno[KM]'))
         return total
     
+    def delete_selection(self):
+        self.treeview.delete(self.treeview.selection()[0])
+    
 
 #base class for adding new workorder frame widgets
 class WorkorderRowTemplate(object):
@@ -453,7 +456,7 @@ def fill_from_database(tree_jobs, tree_customer_database, name_autocomplete, car
 #FRAME CREATIONG FUNCTIONS
 #################################################################################################
 #new window tree fill from selected csv with hands price entry, button to convert to PDF
-def workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES):
+def workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES, tree_vars):
     if not selected_file:
         return None
     
@@ -484,6 +487,14 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
                 
     #add new part to workorder
     def add_csv_entry(file_location, all_values):
+        if all_values is None:
+            messagebox.showerror('Greška!', 'Niste unijeli sva potrebna polja!', parent=printing_frame)
+            return None
+        
+        for value in all_values:
+            if value is None or value == '':
+                messagebox.showerror('Greška!', 'Niste unijeli sva potrebna polja!', parent=printing_frame)
+                return None
         with open(file_location, '+a', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow(all_values)
@@ -510,7 +521,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             
             modify_button = ttk.Button(mod_button_frame, width=20, text='Modifikuj', style='bttn_style.TButton', 
                                     command=lambda:[modify_csv_entry(estimate_tree.return_selection(),selection_for_edit.get_all_values()), printing_frame.destroy(),
-                                                    workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES)])
+                                                    workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES, tree_vars)])
             modify_button.pack(side='left', anchor='se')
             
             estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
@@ -531,10 +542,36 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             add_new_part_row = WorkorderRowTemplate(new_part_frame, font_style, 0, 10)
             add_new_part_row.total_frame.grid_forget()
 
-            add_button = ttk.Button(add_button_frame, width=20, text='Dodaj Materijal', style='bttn_style.TButton',
+            add_button = ttk.Button(add_button_frame, width=20, text='Unesi', style='bttn_style.TButton',
                                     command=lambda:[add_csv_entry(file_location, add_new_part_row.get_all_values()), printing_frame.destroy(),
-                                                    workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES)])
+                                                    workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES, tree_vars)])
             add_button.pack(side='left', anchor='se')
+            
+    def delete_part(selection, file_location):
+        if selection is None:
+            messagebox.showerror('Upozorenje!', 'Niste označili polje za brisanje.')
+            return None
+        turned_string = []
+        for item in selection['values']:
+            turned_string.append(str(item))
+        index = estimate_tree.get_selected_row_number()
+        estimate_tree.delete_selection()
+        with open(file_location, 'r', newline='', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            temp_list = []
+            for count, value in reader:
+                if value != turned_string and count != index:
+                    temp_list.append(value)
+        
+        with open(file_location, 'w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            for item in temp_list:
+                writer.writerow(item)
+                
+    def refresh_parent():
+        printing_frame.destroy()
+        tree_vars[0].clear()
+        fill_from_database(tree_vars[0], tree_vars[1], tree_vars[2], tree_vars[3], tree_vars[4])
     
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
     file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
@@ -567,24 +604,33 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     newpart_button_frame.config(background=BACKGROUND_COLOR)
     newpart_button_frame.pack(side='left', fill='x')
     
+    delete_entry_frame = tk.Frame(button_frame)
+    delete_entry_frame.config(background=BACKGROUND_COLOR)
+    delete_entry_frame.pack(side='right', fill='x')
+    
     estimate_columns = ('Materijal', 'Marka', 'Cijena[KM]', 'Količina', 'Ukupno[KM]')
     
     estimate_tree = TreeviewTemplate(printing_frame, estimate_columns, tree_style)
     estimate_tree.remove_current_bind('<Double-Button-1>')
     estimate_tree.bind_key('<Double-Button-1>', lambda event:[edit_selection(estimate_tree.return_selection())])
     
-    edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikovanje', style='bttn_style.TButton', 
+    edit_button = ttk.Button(edit_button_frame, width=20, text='Modifikuj Unos', style='bttn_style.TButton', 
                              command=lambda:edit_selection(estimate_tree.return_selection()))
     edit_button.pack(side='left', anchor='sw')
     
-    print_button = ttk.Button(print_button_frame, width=20, text='Printanje', style='bttn_style.TButton',
+    print_button = ttk.Button(print_button_frame, width=20, text='Print', style='bttn_style.TButton',
                               command=lambda:[csv_to_html(printing_frame, file_location, work_amount_entry.get_text(), 
                                                           estimate_tree.return_total(), CUSTOMER_VALUES)])
     print_button.pack(side='left', anchor='sw')
     
-    newpart_button = ttk.Button(newpart_button_frame, width=20, text='Dodaj Dio', style='bttn_style.TButton', 
+    newpart_button = ttk.Button(newpart_button_frame, width=20, text='Unesi', style='bttn_style.TButton', 
                              command=lambda:[insert_new_part(file_location)])
     newpart_button.pack(side='left', anchor='sw')
+    
+    delete_entry_button = ttk.Button(delete_entry_frame, width=20, text='Obriši Unos', style='bttn_style.TButton', 
+                             command=lambda:[delete_part(estimate_tree.return_selection(), file_location), printing_frame.destroy(),
+                                            workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES, tree_vars)])
+    delete_entry_button.pack(side='right', anchor='se')
     
     work_amount_entry = EntryTemplate('Rad', work_entry_frame, font_style, ('left', (5, 0)), 'left', 20)
     km_label = ttk.Label(work_entry_frame, font=font_style, text='KM |', background=BACKGROUND_COLOR)
@@ -594,7 +640,9 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
         reader = csv.reader(file)
         for row in list(reader)[1:]:
             estimate_tree.insert('',row,tag='estimate')
-            
+    
+    printing_frame.protocol('WM_DELETE_WINDOW', refresh_parent)
+    
 #add work order, create csv for workorder       
 def new_workorder(master_window, parent_window, database, font_style, csv_folder, tree_vars):
     
@@ -767,7 +815,7 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
                                                            tree_style,
                                                            tree_jobs.return_selection(), 
                                                            f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}',
-                                                           CUSTOMER_VALUES))
+                                                           CUSTOMER_VALUES, [tree_jobs, tree_customer_database, name_autocomplete, car_autocomplete, reg_autocomplete]))
     
     #check if data is entered in customer query
     def is_data_entered(name, car, reg):
@@ -790,7 +838,7 @@ def find_customer_window(master_window, parent_window, parent_window2, database,
     open_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Otvori Predračun', style='bttn_style.TButton',
                                        command=lambda:workorder_for_printing(parent_window, font_style, tree_style, 
                                         tree_jobs.return_selection(), f'{name_autocomplete.get_text().lower().replace(" ","")}_{reg_autocomplete.get_text().upper().replace(" ","")}',
-                                        CUSTOMER_VALUES))
+                                        CUSTOMER_VALUES, [tree_jobs, tree_customer_database, name_autocomplete, car_autocomplete, reg_autocomplete]))
     open_workorder_button.pack(side='right')
     
     add_new_workorder_button = ttk.Button(buttons_frame_add, width=20,text='Novi Predračun', style='bttn_style.TButton', 
@@ -826,7 +874,7 @@ def add_customer_window(master_window, parent_window, parent_window2, database, 
                               'reg_broj':reg_entry.get_text().upper()})
         database.name_auto_complete.append(name_entry.get_text().title())
         database.reg_auto_complete.append(reg_entry.get_text().upper())
-        messagebox.showinfo('Uspjeh', 'Nova mušterija dodana u bazu podataka.')
+        messagebox.showinfo('Uspjeh', 'Nova mušterija unesena u bazu podataka.')
         
         #create work.csv file if one does not exist
         name_reg_nospace = name_entry.get_text().lower().replace(' ', '') + '_' + reg_entry.get_text().upper().replace(' ', '')
@@ -925,7 +973,7 @@ def main():
     find_customer_window(master_window, windows_frame, windows_frame2, database, font_style, tree_style)
     
     #add new customer button
-    add_customer_button = ttk.Button(buttons_frame, width=20, text='Dodaj Mušteriju', style='bttn_style.TButton', 
+    add_customer_button = ttk.Button(buttons_frame, width=20, text='Unesi Mušteriju', style='bttn_style.TButton', 
                                     command=lambda:[add_customer_window(master_window, windows_frame, windows_frame2, database, font_style, tree_style)])
     add_customer_button.pack(side='right')
 
