@@ -481,6 +481,12 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             edit_writer.writerow(['materijal', 'marka', 'cijena[KM]', 'količina', 'ukupno[KM]'])
             for row in reversed(file_holder):
                 edit_writer.writerow(row)
+                
+    #add new part to workorder
+    def add_csv_entry(file_location, all_values):
+        with open(file_location, '+a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(all_values)
     
     #frame for modification of csv file which takes and returns values
     def edit_selection(selection):
@@ -509,8 +515,26 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
             
             estimate_tree.bind_key('<Double-Button-1>', lambda event:edit_selection(estimate_tree.return_selection()))
     
+    #add new part to existing workorder
     def insert_new_part(file_location):
-        print(file_location)
+        if len(work_entry_frame.winfo_children()) == 5:
+            work_entry_frame.winfo_children()[-1].destroy()
+            work_entry_frame.winfo_children()[-1].destroy()
+            
+        if len(work_entry_frame.winfo_children()) < 4:
+            new_part_frame = tk.Frame(work_entry_frame)
+            new_part_frame.pack(side='left')
+            
+            add_button_frame = tk.Frame(work_entry_frame)
+            add_button_frame.pack(side='left')
+            
+            add_new_part_row = WorkorderRowTemplate(new_part_frame, font_style, 0, 10)
+            add_new_part_row.total_frame.grid_forget()
+
+            add_button = ttk.Button(add_button_frame, width=20, text='Dodaj Materijal', style='bttn_style.TButton',
+                                    command=lambda:[add_csv_entry(file_location, add_new_part_row.get_all_values()), printing_frame.destroy(),
+                                                    workorder_for_printing(parent_window, font_style, tree_style, selected_file, customer_name, CUSTOMER_VALUES)])
+            add_button.pack(side='left', anchor='se')
     
     file_for_printing = selected_file['values'][0].replace('.','_') + '.csv'
     file_location = f'{JOBS_STORAGE_PATH}{customer_name}\{file_for_printing}'
