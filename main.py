@@ -921,7 +921,7 @@ def main():
     #main window
     master_window = tk.Tk()
     master_window.title('Predračun')
-    master_window.attributes('-fullscreen', False)
+    master_window.state('zoomed')
     master_window.config(background=BACKGROUND_COLOR)
     
     #create tiled background image from selected photo
