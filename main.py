@@ -324,17 +324,18 @@ def fill_workorder_tree(name, reg, tree):
         
         parts = []
         total_price = 0
-        for csv_file in directory_contents:
+        for csv_file in directory_contents: 
             with open(f'{JOBS_STORAGE_PATH}{csv_file_path}\\{csv_file}', 'r', encoding='utf-8') as file:
                 reader = csv.reader(file)           
                 for row in list(reader)[1:]:
                     if row != '':
                         parts.append(row[0]+',')
                         total_price += (decimal.Decimal(row[4]))  
-                parts[-1] = parts[-1][:-1]  
-            tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), ' '.join(parts), str(total_price)], tag='folder')
-            parts = []
-            total_price = 0
+                if parts != []:
+                    parts[-1] = parts[-1][:-1]  
+                tree.insert('', [csv_file.replace('.csv', '').replace('_', '.'), ' '.join(parts), str(total_price)], tag='folder')
+                parts = []
+                total_price = 0
             
 def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_VALUES):
     if work_price is None or work_price == "":
@@ -361,7 +362,7 @@ def csv_to_html(parent_window, file_location, work_price, total_value, CUSTOMER_
                 </div>
             </div>
             <center class="dataframe fontstyle"><strong>PREDRAČUN</strong></center>
-            <p align="right"><right><strong>DANA:{todays_date}</strong></right></p>
+            <p align="right" class="dataframe datefontstyle"><right><strong>DANA:{todays_date}</strong></right></p>
             {customer_data}
             {to_browser}
             {second_html_table}
@@ -551,22 +552,23 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
         if selection is None:
             messagebox.showerror('Upozorenje!', 'Niste označili polje za brisanje.')
             return None
-        turned_string = []
-        for item in selection['values']:
-            turned_string.append(str(item))
+        # turned_string = []
+        # for item in selection['values']:
+        #     turned_string.append(str(item))
         index = estimate_tree.get_selected_row_number()
-        estimate_tree.delete_selection()
         with open(file_location, 'r', newline='', encoding='utf-8') as file:
             reader = csv.reader(file)
             temp_list = []
-            for count, value in reader:
-                if value != turned_string and count != index:
+            for count, value in enumerate(reversed(list(reader))):
+                if count != index:
                     temp_list.append(value)
         
         with open(file_location, 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            for item in temp_list:
+            for item in reversed(temp_list):
                 writer.writerow(item)
+        
+        #estimate_tree.delete_selection()
                 
     def refresh_parent():
         printing_frame.destroy()
@@ -596,13 +598,13 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
     edit_button_frame.config(background=BACKGROUND_COLOR)
     edit_button_frame.pack(side='left', fill='x')
     
-    print_button_frame = tk.Frame(button_frame)
-    print_button_frame.config(background=BACKGROUND_COLOR)
-    print_button_frame.pack(side='left', fill='x')
-    
     newpart_button_frame = tk.Frame(button_frame)
     newpart_button_frame.config(background=BACKGROUND_COLOR)
     newpart_button_frame.pack(side='left', fill='x')
+    
+    print_button_frame = tk.Frame(button_frame)
+    print_button_frame.config(background=BACKGROUND_COLOR)
+    print_button_frame.pack(side='left', fill='x')
     
     delete_entry_frame = tk.Frame(button_frame)
     delete_entry_frame.config(background=BACKGROUND_COLOR)
@@ -623,7 +625,7 @@ def workorder_for_printing(parent_window, font_style, tree_style, selected_file,
                                                           estimate_tree.return_total(), CUSTOMER_VALUES)])
     print_button.pack(side='left', anchor='sw')
     
-    newpart_button = ttk.Button(newpart_button_frame, width=20, text='Unesi', style='bttn_style.TButton', 
+    newpart_button = ttk.Button(newpart_button_frame, width=20, text='Novi Unos', style='bttn_style.TButton', 
                              command=lambda:[insert_new_part(file_location)])
     newpart_button.pack(side='left', anchor='sw')
     
